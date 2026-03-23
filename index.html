@@ -234,6 +234,7 @@
             <p style="color: #00ffcc; margin-bottom: 40px; font-size: 10px;">> O COMANDANTE FIASCO OS AGUARDA...</p>
             <button id="btn-continue" class="btn" onclick="sfx.init(); sfx.startMusic(); game.loadGame()" style="display:none; margin-bottom: 10px; background: rgba(0, 255, 204, 0.2);">Continuar Fracasso</button>
             <button class="btn" onclick="sfx.init(); sfx.startMusic(); game.showSelect()">Aceitar e Fracassar</button>
+            <button id="btn-fs" class="btn" onclick="game.toggleFullscreen()" style="border-color: #ffff00; color: #ffff00; margin-left: 10px;">Tela Cheia 📺</button>
             <button id="btn-install" class="btn" style="display:none; border-color: #ff00ff; color: #ff00ff; margin-left: 10px;" onclick="sfx.play('pickup'); window.installPWA()">Instalar como App</button>
             <br>
             <button class="btn" onclick="sfx.init(); game.showHowToPlay()" style="border-color: #555; color: #aaa;">Como Tentar (e falhar)</button>
@@ -445,7 +446,7 @@ const sfx = {
         } else if(type === 'talk') { 
             osc.type = 'square'; osc.frequency.setValueAtTime(400 + Math.random()*200, now);
             gain.gain.setValueAtTime(0.02 * vol, now); gain.gain.linearRampToValueAtTime(0, now + 0.05);
-            osc.start(now); osc.stop(now + 0.05);
+            osc.start(now); osc.stop(0.05);
         } else if(type === 'alert') {
             osc.type = 'square'; osc.frequency.setValueAtTime(800, now); osc.frequency.setValueAtTime(1200, now + 0.1);
             gain.gain.setValueAtTime(0.05 * vol, now); gain.gain.linearRampToValueAtTime(0, now + 0.2);
@@ -836,10 +837,22 @@ const game = {
 
     updateArmor(val) { this.selectedArmorIdx = parseInt(val); if(this.preview.model) this.updatePreviewModel(); },
 
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                this.showDialogue("Sistema", "Não foi possível ativar tela cheia no seu dispositivo.");
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    },
+
     initPreview3D() {
         const container = document.getElementById('customize-preview');
         this.preview.scene = new THREE.Scene(); this.preview.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-        this.preview.camera.position.set(0, 3.5, 9); this.preview.camera.lookAt(0, 3.5, 0);
+        this.preview.camera.position.set(0, 3.8, 13); this.preview.camera.lookAt(0, 3.5, 0);
         this.preview.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.preview.renderer.setSize(220, 220); container.appendChild(this.preview.renderer.domElement);
         this.preview.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
