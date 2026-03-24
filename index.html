@@ -637,10 +637,9 @@ const game = {
     bossObj: null, bossActive: false, bossHp: 1000, bossMaxHp: 1000, isFinalBoss: false,
     phase: 'WAVE', timerSeconds: 120, currentShopItems: [],
     isMobile: false, jMove: { active: false, x: 0, y: 0, id: null }, isMobileAttacking: false,
-    flashMats: {}, miniBossSpawned: false,
+    flashMats: {}, miniBossSpawned: false, loadedWave: null,
     
     initUI() {
-        this.checkSave();
         this.setupMobileControls();
         const container = document.getElementById('char-container');
         CHARACTERS.forEach((c, idx) => {
@@ -666,7 +665,10 @@ const game = {
         this.selectedChar = CHARACTERS[0];
         
         this.initPreview3D();
-        requestAnimationFrame(() => this.loop());
+        
+        this.initFirebase().then(() => {
+            requestAnimationFrame(() => this.loop());
+        });
 
         window.addEventListener('blur', () => { this.keys = {w:false, a:false, s:false, d:false, shift:false, r:false}; });
 
@@ -916,14 +918,58 @@ const game = {
         this.preview.scene.add(this.preview.model);
     },
 
-    checkSave() {
-        const btn = document.getElementById('btn-continue');
-        if(localStorage.getItem('constelacao_save')) btn.style.display = 'block'; else btn.style.display = 'none';
+    async initFirebase() {
+        try {
+            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+            const { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+            const { getFirestore } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+            
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            this.db = getFirestore(app);
+            this.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+            const initAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            };
+            await initAuth();
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    this.userId = user.uid;
+                    await this.checkSave();
+                }
+            });
+        } catch (e) {
+            console.error("Modo Nuvem indisponível, a operar offline.", e);
+            this.checkSave();
+        }
     },
 
-    saveGame() {
+    async checkSave() {
+        let exists = false;
+        if (this.db && this.userId) {
+            try {
+                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                const docRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'saves', 'game_save');
+                const snap = await getDoc(docRef);
+                exists = snap.exists();
+            } catch(e) { console.warn("Check Error", e); }
+        } else {
+            exists = !!window.tempSave;
+        }
+        const btn = document.getElementById('btn-continue');
+        if(exists) btn.style.display = 'inline-block'; else btn.style.display = 'none';
+    },
+
+    async saveGame() {
         const data = {
-            stage: this.stage, parts: this.parts, lagrimas: this.lagrimas,
+            stage: this.stage, parts: this.parts, lagrimas: this.lagrimas, wave: this.wave,
             charId: this.selectedChar.id, color: this.playerColor, abIdx: this.selectedAbilityIdx, arIdx: this.selectedArmorIdx,
             stats: { 
                 maxHp: this.pStats.maxHp, speed: this.pStats.speed, damage: this.pStats.damage, 
@@ -931,15 +977,41 @@ const game = {
             },
             dashMax: this.dash.maxCooldown
         };
-        localStorage.setItem('constelacao_save', JSON.stringify(data));
+        
+        if (this.db && this.userId) {
+            try {
+                const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                const docRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'saves', 'game_save');
+                await setDoc(docRef, data);
+            } catch(e) { console.warn("Save Error", e); }
+        } else {
+            window.tempSave = data;
+        }
     },
 
-    loadGame() {
-        const data = JSON.parse(localStorage.getItem('constelacao_save'));
+    async loadGame() {
+        let data = null;
+        if (this.db && this.userId) {
+            try {
+                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                const docRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'saves', 'game_save');
+                const snap = await getDoc(docRef);
+                if(snap.exists()) data = snap.data();
+            } catch(e) { console.warn("Load Error", e); }
+        } else {
+            data = window.tempSave;
+        }
+
         if(data) {
-            this.isLoadedGame = true; this.stage = data.stage; this.parts = data.parts; this.lagrimas = data.lagrimas || 0;
+            this.isLoadedGame = true; 
+            this.stage = data.stage; 
+            this.parts = data.parts; 
+            this.lagrimas = data.lagrimas || 0;
+            this.loadedWave = data.wave || 1;
             this.selectedChar = CHARACTERS.find(c => c.id === data.charId) || CHARACTERS[0];
-            this.playerColor = data.color; this.selectedAbilityIdx = data.abIdx || 0; this.selectedArmorIdx = data.arIdx || 0;
+            this.playerColor = data.color; 
+            this.selectedAbilityIdx = data.abIdx || 0; 
+            this.selectedArmorIdx = data.arIdx || 0;
             this.pStats = { 
                 ...this.selectedChar.stats, maxHp: data.stats.maxHp, speed: data.stats.speed, 
                 damage: data.stats.damage, fireRate: data.stats.fireRate, type: data.stats.type, 
@@ -967,7 +1039,7 @@ const game = {
             this.safeRequestPointerLock();
         } 
     },
-    saveAndQuit() { this.saveGame(); location.reload(); },
+    async saveAndQuit() { await this.saveGame(); location.reload(); },
 
     changeVolume(delta) {
         sfx.globalVolume = Math.max(0, Math.min(1, sfx.globalVolume + delta));
@@ -1100,7 +1172,13 @@ const game = {
         this.crateTimer = 0;
         this.spawnRoda();
 
-        this.wave = 1; this.phase = 'WAVE'; 
+        if (this.loadedWave) {
+            this.wave = this.loadedWave;
+            this.loadedWave = null;
+        } else {
+            this.wave = 1; 
+        }
+        this.phase = 'WAVE'; 
         this.timerSeconds = 60; 
         this.bossActive = false; this.isFinalBoss = false;
         this.miniBossSpawned = false;
@@ -1869,12 +1947,14 @@ const game = {
             this.miniBossSpawned = false;
             this.safeRequestPointerLock();
             this.showDialogue("Comandante Fiasco", `Iniciando Onda ${this.wave}/5`, 3000);
+            this.saveGame();
         } else {
             if (this.stage === 4) {
                 this.startStory('PRE_BOSS');
             } else {
                 this.phase = 'BOSS';
                 this.startFinalBoss(); 
+                this.saveGame();
             }
         }
     },
