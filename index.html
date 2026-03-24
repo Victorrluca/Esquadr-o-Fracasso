@@ -177,6 +177,7 @@
         }
         #crosshair::after { content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #ff00ff; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 5px #ff00ff; }
 
+        /* AVISO DE ORIENTAÇÃO (Obriga a virar a tela) */
         #orientation-warning {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #010308; z-index: 9999; color: #00ffcc; flex-direction: column;
@@ -187,6 +188,7 @@
             #mobile-controls, .ui-layer, #hud, #hud-center { display: none !important; }
         }
 
+        /* CONTROLOS MOBILE - NOVO LAYOUT */
         #mobile-controls { display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
         .joystick-zone { position: absolute; bottom: 30px; width: 130px; height: 130px; background: rgba(0, 255, 204, 0.1); border: 2px solid rgba(0, 255, 204, 0.4); border-radius: 50%; pointer-events: auto; }
         #joystick-move { left: 40px; }
@@ -198,6 +200,7 @@
         #btn-dash { right: 130px; bottom: 30px; }
         #btn-ult-mob { right: 100px; bottom: 110px; border-color: #ff00ff; background: rgba(255,0,255,0.5); display: none; }
 
+        /* --- OTIMIZAÇÕES EXTREMAS PARA MOBILE (Telas Pequenas em Paisagem) --- */
         @media (max-height: 500px), (max-width: 850px) {
             h1 { font-size: 14px !important; margin-bottom: 5px !important; }
             .btn { padding: 8px 15px; margin-top: 5px; font-size: 9px; }
@@ -226,6 +229,7 @@
             #btn-dash { width: 45px; height: 45px; right: 90px; bottom: 15px; font-size: 8px; }
             #btn-ult-mob { width: 45px; height: 45px; right: 55px; bottom: 85px; font-size: 8px; }
             
+            /* Ajustes Finos HUD Mobile - Menos apertado */
             #hud .hud-bar { top: 5px; left: 5px; padding: 5px; transform: scale(0.85); transform-origin: top left; }
             #parts-counter { top: 5px; right: 5px; padding: 5px; transform: scale(0.85); transform-origin: top right; }
             #pause-btn { top: 5px; left: 50%; transform: translateX(-50%); width: 35px; height: 35px; font-size: 16px; border-width: 1px;}
@@ -252,7 +256,10 @@
             <p style="color: #00ffcc; margin-bottom: 40px; font-size: 10px;">> O CAPITÃO FIASCO OS AGUARDA...</p>
             <button id="btn-continue" class="btn" onclick="sfx.init(); sfx.startMusic(); game.loadGame()" style="display:none; margin-bottom: 10px; background: rgba(0, 255, 204, 0.2);">Continuar Fracasso</button>
             <button class="btn" onclick="sfx.init(); sfx.startMusic(); game.showSelect()">Aceitar e Fracassar</button>
+            
+            <!-- Botão de Tela Cheia adicionado -->
             <button id="btn-fs" class="btn" onclick="game.toggleFullscreen()" style="border-color: #ffff00; color: #ffff00; margin-left: 10px;">Tela Cheia 📺</button>
+            
             <button id="btn-install" class="btn" style="display:none; border-color: #ff00ff; color: #ff00ff; margin-left: 10px;" onclick="sfx.play('pickup'); window.installPWA()">Instalar App</button>
             <br>
             <button class="btn" onclick="sfx.init(); game.showHowToPlay()" style="border-color: #555; color: #aaa;">Como Tentar (e falhar)</button>
@@ -409,30 +416,71 @@
     </div>
 
 <script>
+// --- MOTOR DE ÁUDIO 8-BIT (SINTETIZADOR) ---
 const sfx = {
-    ctx: null, globalVolume: 0.5, musicInterval: null, isPlayingMusic: false,
-    init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if(this.ctx.state === 'suspended') this.ctx.resume(); },
+    ctx: null,
+    globalVolume: 0.5,
+    musicInterval: null,
+    isPlayingMusic: false,
+    init() {
+        if(!this.ctx) {
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            if(window.AudioContext) this.ctx = new AudioContext();
+        }
+        if(this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    },
     startMusic() {
-        if(this.isPlayingMusic || !this.ctx) return; this.isPlayingMusic = true;
-        let noteIdx = 0; const seq = [164.81, 164.81, 196.00, 164.81, 220.00, 164.81, 246.94, 196.00]; 
+        if(this.isPlayingMusic || !this.ctx) return;
+        this.isPlayingMusic = true;
+        let noteIdx = 0;
+        const seq = [164.81, 164.81, 196.00, 164.81, 220.00, 164.81, 246.94, 196.00]; 
         this.musicInterval = setInterval(() => {
             if(this.globalVolume <= 0) return;
-            const now = this.ctx.currentTime; const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
-            osc.type = 'triangle'; osc.frequency.setValueAtTime(seq[noteIdx % seq.length] / 1.5, now);
-            gain.gain.setValueAtTime(0.04 * this.globalVolume, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-            osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now + 0.2); noteIdx++;
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(seq[noteIdx % seq.length] / 1.5, now);
+            gain.gain.setValueAtTime(0.04 * this.globalVolume, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(now); osc.stop(now + 0.2);
+            noteIdx++;
         }, 300);
     },
     play(type) {
         if(!this.ctx || this.globalVolume <= 0) return;
-        const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
-        osc.connect(gain); gain.connect(this.ctx.destination); const now = this.ctx.currentTime;
-        if(type === 'shoot') { osc.type = 'square'; osc.frequency.setValueAtTime(300, now); gain.gain.setValueAtTime(0.05 * this.globalVolume, now); osc.start(now); osc.stop(now + 0.1); }
-        else if(type === 'hit') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gain.gain.setValueAtTime(0.1 * this.globalVolume, now); osc.start(now); osc.stop(now + 0.15); }
-        else if(type === 'pickup') { osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); gain.gain.setValueAtTime(0.05 * this.globalVolume, now); osc.start(now); osc.stop(now + 0.1); }
-        else if(type === 'explosion') { osc.type = 'square'; osc.frequency.setValueAtTime(80, now); gain.gain.setValueAtTime(0.2 * this.globalVolume, now); osc.start(now); osc.stop(now + 0.5); }
-        else if(type === 'talk') { osc.type = 'square'; osc.frequency.setValueAtTime(400 + Math.random()*200, now); gain.gain.setValueAtTime(0.02 * this.globalVolume, now); osc.start(now); osc.stop(now + 0.05); }
-        else if(type === 'alert') { osc.type = 'square'; osc.frequency.setValueAtTime(800, now); osc.frequency.setValueAtTime(1200, now + 0.1); gain.gain.setValueAtTime(0.05 * this.globalVolume, now); gain.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); }
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        const now = this.ctx.currentTime;
+        const vol = this.globalVolume;
+        
+        if(type === 'shoot') {
+            osc.type = 'square'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+            gain.gain.setValueAtTime(0.05 * vol, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
+        } else if(type === 'hit') {
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+            gain.gain.setValueAtTime(0.1 * vol, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now); osc.stop(now + 0.15);
+        } else if(type === 'pickup') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(900, now + 0.05);
+            gain.gain.setValueAtTime(0.05 * vol, now); gain.gain.linearRampToValueAtTime(0, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
+        } else if(type === 'explosion') {
+            osc.type = 'square'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+            gain.gain.setValueAtTime(0.2 * vol, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            osc.start(now); osc.stop(now + 0.5);
+        } else if(type === 'talk') { 
+            osc.type = 'square'; osc.frequency.setValueAtTime(400 + Math.random()*200, now);
+            gain.gain.setValueAtTime(0.02 * vol, now); gain.gain.linearRampToValueAtTime(0, now + 0.05);
+            osc.start(now); osc.stop(now + 0.05);
+        } else if(type === 'alert') {
+            osc.type = 'square'; osc.frequency.setValueAtTime(800, now); osc.frequency.setValueAtTime(1200, now + 0.1);
+            gain.gain.setValueAtTime(0.05 * vol, now); gain.gain.linearRampToValueAtTime(0, now + 0.2);
+            osc.start(now); osc.stop(now + 0.2);
+        }
     }
 };
 
@@ -459,6 +507,7 @@ const QUOTES = [
     "Foco no objetivo (que é desistir logo)."
 ];
 
+// Tons de fundo mais claros para evitar que o ecrã fique demasiado escuro no telemóvel
 const STAGE_THEMES = [
     { 
         name: "Labirinto Corporativo", floor: 0x2a3a4c, fog: 0x1a252c, env: 'office',
@@ -849,6 +898,7 @@ const game = {
         this.preview.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
         const light = new THREE.DirectionalLight(0xffffff, 0.5); light.position.set(5, 10, 5); this.preview.scene.add(light);
 
+        // CONTROLO DE ROTAÇÃO MANUAL (Rato e Toque)
         const onDown = (e) => {
             this.preview.isDragging = true;
             this.preview.previousX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
@@ -857,7 +907,7 @@ const game = {
             if (this.preview.isDragging && this.preview.model) {
                 const currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
                 const deltaX = currentX - this.preview.previousX;
-                this.preview.model.rotation.y += deltaX * 0.015;
+                this.preview.model.rotation.y += deltaX * 0.015; // Velocidade da rotação
                 this.preview.previousX = currentX;
             }
         };
@@ -882,54 +932,62 @@ const game = {
 
     async initFirebase() {
         try {
-            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-            const { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-            const { getFirestore } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-            
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            this.db = getFirestore(app);
+            const appModule = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+            const authModule = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+            const fsModule = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+            this.fsDoc = fsModule.doc;
+            this.fsSetDoc = fsModule.setDoc;
+            this.fsGetDoc = fsModule.getDoc;
+
+            if (typeof __firebase_config === 'undefined') {
+                throw new Error("No Firebase config");
+            }
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const app = appModule.initializeApp(firebaseConfig);
+            const auth = authModule.getAuth(app);
+            this.db = fsModule.getFirestore(app);
             this.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
             const initAuth = async () => {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                    await authModule.signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    await signInAnonymously(auth);
+                    await authModule.signInAnonymously(auth);
                 }
             };
             await initAuth();
 
-            onAuthStateChanged(auth, async (user) => {
+            authModule.onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     this.userId = user.uid;
                     await this.checkSave();
                 }
             });
         } catch (e) {
-            console.error("Modo Nuvem indisponível, a operar offline.", e);
-            this.checkSave();
+            console.warn("Modo Nuvem indisponível, a operar offline.", e);
+            await this.checkSave();
         }
     },
 
     async checkSave() {
         let exists = false;
-        if (this.db && this.userId) {
+        if (this.db && this.userId && this.fsDoc && this.fsGetDoc) {
             try {
-                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                const docRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'saves', 'game_save');
-                const snap = await getDoc(docRef);
+                const docRef = this.fsDoc(this.db, 'artifacts', this.appId, 'users', this.userId, 'saves', 'game_save');
+                const snap = await this.fsGetDoc(docRef);
                 exists = snap.exists();
             } catch(e) { console.warn("Check Error", e); }
         }
         
         if (!exists) {
-            exists = !!localStorage.getItem('constelacao_save');
+            exists = localStorage.getItem('constelacao_save') !== null;
         }
 
         const btn = document.getElementById('btn-continue');
-        if(exists) btn.style.display = 'inline-block'; else btn.style.display = 'none';
+        if (btn) {
+            btn.style.display = exists ? 'inline-block' : 'none';
+        }
     },
 
     async saveGame() {
@@ -943,40 +1001,45 @@ const game = {
             dashMax: this.dash.maxCooldown
         };
         
-        if (this.db && this.userId) {
+        if (this.db && this.userId && this.fsDoc && this.fsSetDoc) {
             try {
-                const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                const docRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'saves', 'game_save');
-                await setDoc(docRef, data);
+                const docRef = this.fsDoc(this.db, 'artifacts', this.appId, 'users', this.userId, 'saves', 'game_save');
+                await this.fsSetDoc(docRef, data);
             } catch(e) { console.warn("Save Error", e); }
         }
-        localStorage.setItem('constelacao_save', JSON.stringify(data));
+        
+        try {
+            localStorage.setItem('constelacao_save', JSON.stringify(data));
+        } catch(e) {}
+        
         this.showSaveIndicator();
     },
 
     async loadGame() {
         let data = null;
-        if (this.db && this.userId) {
+        if (this.db && this.userId && this.fsDoc && this.fsGetDoc) {
             try {
-                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                const docRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'saves', 'game_save');
-                const snap = await getDoc(docRef);
+                const docRef = this.fsDoc(this.db, 'artifacts', this.appId, 'users', this.userId, 'saves', 'game_save');
+                const snap = await this.fsGetDoc(docRef);
                 if(snap.exists()) data = snap.data();
             } catch(e) { console.warn("Load Error", e); }
         }
         
         if(!data) {
-            data = JSON.parse(localStorage.getItem('constelacao_save'));
+            try {
+                const localData = localStorage.getItem('constelacao_save');
+                if (localData) data = JSON.parse(localData);
+            } catch(e) {}
         }
 
         if(data) {
             this.isLoadedGame = true; 
-            this.stage = data.stage; 
-            this.parts = data.parts; 
+            this.stage = data.stage || 1; 
+            this.parts = data.parts || 0; 
             this.lagrimas = data.lagrimas || 0;
             this.loadedWave = data.wave || 1;
             this.selectedChar = CHARACTERS.find(c => c.id === data.charId) || CHARACTERS[0];
-            this.playerColor = data.color; 
+            this.playerColor = data.color || '#3498db'; 
             this.selectedAbilityIdx = data.abIdx || 0; 
             this.selectedArmorIdx = data.arIdx || 0;
             this.pStats = { 
@@ -988,6 +1051,8 @@ const game = {
             this.pStats.hp = this.pStats.maxHp;
             if(data.dashMax) this.dash.maxCooldown = data.dashMax;
             this.startLoading();
+        } else {
+            this.showDialogue("Capitão Fiasco", "Nenhum progresso encontrado. Pare de chorar e comece do zero.", 3000);
         }
     },
 
@@ -1754,7 +1819,7 @@ const game = {
 
         const nukeMesh = new THREE.Mesh(
             new THREE.TorusGeometry(1, 0.5, 16, 64), 
-            new THREE.MeshBasicMaterial({color: 0xff5500, transparent: true, opacity: 1.0})
+            new THREE.MeshBasicMaterial({color: 0xff5500, transparent: true, opacity: 1.0, side: THREE.DoubleSide, depthWrite: false})
         );
         nukeMesh.rotation.x = Math.PI / 2;
         nukeMesh.position.copy(this.playerObj.position);
@@ -2014,7 +2079,7 @@ const game = {
 
         const nukeMesh = new THREE.Mesh(
             new THREE.TorusGeometry(1, 0.5, 16, 64), 
-            new THREE.MeshBasicMaterial({color: 0xff5500, transparent: true, opacity: 1.0})
+            new THREE.MeshBasicMaterial({color: 0xff5500, transparent: true, opacity: 1.0, side: THREE.DoubleSide, depthWrite: false})
         );
         nukeMesh.rotation.x = Math.PI / 2;
         nukeMesh.position.copy(this.playerObj.position);
@@ -2048,7 +2113,9 @@ const game = {
         this.pStats.hp -= amount; this.updateHUD(); this.flashCharacter(this.playerObj, 0xff0000);
         if(this.pStats.hp <= 0) {
             if(!this.isMobile && document.pointerLockElement) document.exitPointerLock();
-            this.state = 'GAMEOVER'; this.switchScreen('screen-gameover');
+            this.state = 'GAMEOVER'; 
+            this.switchScreen('screen-gameover');
+            this.saveGame(); 
         }
     },
 
@@ -2476,6 +2543,37 @@ const game = {
         if(this.orbitGroup) {
             this.orbitGroup.position.copy(this.playerObj.position);
             this.orbitGroup.position.y = 1;
+            
+            if(this.pStats.rodaActive) {
+                const rotSpeed = 4 + (this.pStats.levels.roda * 2); 
+                this.orbitGroup.rotation.y += rotSpeed * dt;
+                const tearDmg = this.pStats.damage * 0.5;
+                
+                for(let t of this.orbitGroup.children) {
+                    if(!t) continue;
+                    let wp = new THREE.Vector3(); t.getWorldPosition(wp);
+                    
+                    for(let j = this.enemies.length - 1; j >= 0; j--) {
+                        const e = this.enemies[j];
+                        if(e && e.position && wp.distanceTo(e.position) < 2.5) {
+                            if(!e.userData.rodaHitTimer || e.userData.rodaHitTimer <= 0) {
+                                sfx.play('hit');
+                                e.userData.hp -= tearDmg; e.userData.rodaHitTimer = 0.5;
+                                this.flashCharacter(e, 0xffffff);
+                                if(e.userData.hp <= 0) {
+                                    this.spawnTear(e.position, e.userData.isMiniBoss ? 15 : 1);
+                                    this.scene.remove(e); this.disposeObject(e); this.enemies.splice(j, 1);
+                                }
+                            }
+                        }
+                    }
+                    if(this.bossActive && this.bossObj && this.bossObj.position && wp.distanceTo(this.bossObj.position) < (this.isFinalBoss?7:5)) {
+                        if(!this.bossObj.userData.rodaHitTimer || this.bossObj.userData.rodaHitTimer <= 0) {
+                            this.damageBoss(tearDmg); this.bossObj.userData.rodaHitTimer = 0.3;
+                        }
+                    }
+                }
+            }
         }
 
         // CORREÇÃO NUKE: Opacidade suave e sem "cegar" a câmera
@@ -2629,7 +2727,10 @@ const game = {
         } else {
             this.stage++; 
             this.showDialogue("Capitão Fiasco", "Chefe Derrotado! +50 Lágrimas recebidas.", 3000);
-            setTimeout(() => this.startLoading(), 3000); 
+            setTimeout(() => {
+                this.saveGame();
+                this.startLoading();
+            }, 3000); 
         }
     }
 };
