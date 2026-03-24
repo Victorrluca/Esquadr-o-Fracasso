@@ -9,9 +9,27 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#010308">
-    <link rel="manifest" href='data:application/manifest+json,{"name":"Esquadrão Fracasso","short_name":"Fracasso","start_url":".","display":"fullscreen","orientation":"landscape","background_color":"#010308","theme_color":"#010308","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwMTAzMDgiLz48dGV4dCB4PSI1MCUiIHk9IjUyJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIyMDAiIGZpbGw9IiMwMGZmY2MiPvCfhbY8L3RleHQ+PC9zdmc+","sizes":"512x512","type":"image/svg+xml"}]}'>
+    <link rel="manifest" id="manifest-link">
     
     <script>
+        // Criar um arquivo manifest.json virtual para forçar a instalação
+        const manifestData = {
+            "name": "Esquadrão Fracasso",
+            "short_name": "Fracasso",
+            "start_url": ".",
+            "display": "fullscreen",
+            "orientation": "landscape",
+            "background_color": "#010308",
+            "theme_color": "#010308",
+            "icons": [{
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwMTAzMDgiLz48dGV4dCB4PSI1MCUiIHk9IjUyJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIyMDAiIGZpbGw9IiMwMGZmY2MiPvCfhbY8L3RleHQ+PC9zdmc+",
+                "sizes": "512x512",
+                "type": "image/svg+xml"
+            }]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/manifest+json'});
+        document.getElementById('manifest-link').href = URL.createObjectURL(manifestBlob);
+
         // Capturar evento de instalação para mostrar o botão
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -205,16 +223,19 @@
             .skill-node { width: auto; padding: 8px; font-size: 8px; }
             .story-text { font-size: 9px; padding: 10px; min-height: 80px; margin: 5px; line-height: 1.6; }
             
+            /* Melhorias no HUD e controles do Mobile */
             .joystick-zone { width: 90px; height: 90px; bottom: 15px; left: 15px; }
             .joystick-knob { width: 35px; height: 35px; }
             #btn-attack { width: 65px; height: 65px; font-size: 10px; right: 15px; bottom: 15px; }
             #btn-dash { width: 45px; height: 45px; right: 90px; bottom: 15px; font-size: 8px; }
             #btn-ult-mob { width: 45px; height: 45px; right: 55px; bottom: 85px; font-size: 8px; }
-            #hud .hud-bar { top: 5px; left: 5px; padding: 5px; }
-            #parts-counter { top: 5px; right: 5px; padding: 5px; }
-            #pause-btn { top: 60px; right: 5px; width: 35px; height: 35px; font-size: 16px; border-width: 1px;}
-            #ult-indicator { top: 5px; right: 70px; }
-            #ult-btn-ui { padding: 4px; font-size: 7px; border-width: 1px;}
+            
+            /* Ajustes finos no HUD para dar respiro */
+            #hud .hud-bar { top: 5px; left: 5px; padding: 5px; transform: scale(0.85); transform-origin: top left; }
+            #parts-counter { top: 5px; right: 5px; padding: 5px; transform: scale(0.85); transform-origin: top right; }
+            #pause-btn { top: 5px; left: 50%; transform: translateX(-50%); width: 35px; height: 35px; font-size: 16px; border-width: 1px; }
+            #ult-indicator { top: 50px; right: 5px; transform: scale(0.85); transform-origin: top right; }
+            #ult-btn-ui { padding: 4px; font-size: 7px; border-width: 1px; }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -236,11 +257,14 @@
             <p style="color: #00ffcc; margin-bottom: 40px; font-size: 10px;">> O COMANDANTE FIASCO OS AGUARDA...</p>
             <button id="btn-continue" class="btn" onclick="sfx.init(); sfx.startMusic(); game.loadGame()" style="display:none; margin-bottom: 10px; background: rgba(0, 255, 204, 0.2);">Continuar Fracasso</button>
             <button class="btn" onclick="sfx.init(); sfx.startMusic(); game.showSelect()">Aceitar e Fracassar</button>
+            
+            <!-- Botão de Tela Cheia -->
             <button id="btn-fs" class="btn" onclick="game.toggleFullscreen()" style="border-color: #ffff00; color: #ffff00; margin-left: 10px;">Tela Cheia 📺</button>
-            <button id="btn-install" class="btn" style="display:none; border-color: #ff00ff; color: #ff00ff; margin-left: 10px;" onclick="sfx.play('pickup'); window.installPWA()">Instalar como App</button>
+            
+            <button id="btn-install" class="btn" style="display:none; border-color: #ff00ff; color: #ff00ff; margin-left: 10px;" onclick="sfx.play('pickup'); window.installPWA()">Instalar App</button>
             <br>
             <button class="btn" onclick="sfx.init(); game.showHowToPlay()" style="border-color: #555; color: #aaa;">Como Tentar (e falhar)</button>
-            <div id="version-tag">v1.0.7 - GOLD MASTER</div>
+            <div id="version-tag">v1.0.8 - ULTIMATE MASTER</div>
         </div>
 
         <div id="screen-howtoplay" class="screen">
@@ -324,7 +348,7 @@
         </div>
 
         <div id="screen-pause" class="screen">
-            <h1>PROCRASTINAÇÃO ATIVADA</h1>
+            <h1 style="color: #00ffcc;">PROCRASTINAÇÃO ATIVADA</h1>
             <p style="color: #aaa; font-size: 12px; margin-bottom: 20px;">Adiando as responsabilidades e focando no vazio...</p>
             
             <div style="margin: 15px 0; padding: 15px; border: 2px solid #555; border-radius: 8px; background: rgba(0,0,0,0.5);">
@@ -390,189 +414,47 @@
     </div>
 
 <script>
-// --- MOTOR DE ÁUDIO 8-BIT (SINTETIZADOR) ---
 const sfx = {
-    ctx: null,
-    globalVolume: 0.5,
-    musicInterval: null,
-    isPlayingMusic: false,
-    init() {
-        if(!this.ctx) {
-            window.AudioContext = window.AudioContext || window.webkitAudioContext;
-            if(window.AudioContext) this.ctx = new AudioContext();
-        }
-        if(this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-    },
+    ctx: null, globalVolume: 0.5, musicInterval: null, isPlayingMusic: false,
+    init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if(this.ctx.state === 'suspended') this.ctx.resume(); },
     startMusic() {
-        if(this.isPlayingMusic || !this.ctx) return;
-        this.isPlayingMusic = true;
-        let noteIdx = 0;
-        const seq = [164.81, 164.81, 196.00, 164.81, 220.00, 164.81, 246.94, 196.00]; 
+        if(this.isPlayingMusic || !this.ctx) return; this.isPlayingMusic = true;
+        let noteIdx = 0; const seq = [164.81, 164.81, 196.00, 164.81, 220.00, 164.81, 246.94, 196.00]; 
         this.musicInterval = setInterval(() => {
             if(this.globalVolume <= 0) return;
-            const now = this.ctx.currentTime;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(seq[noteIdx % seq.length] / 1.5, now);
-            gain.gain.setValueAtTime(0.04 * this.globalVolume, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-            osc.connect(gain); gain.connect(this.ctx.destination);
-            osc.start(now); osc.stop(now + 0.2);
-            noteIdx++;
+            const now = this.ctx.currentTime; const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(seq[noteIdx % seq.length] / 1.5, now);
+            gain.gain.setValueAtTime(0.04 * this.globalVolume, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now + 0.2); noteIdx++;
         }, 300);
     },
     play(type) {
         if(!this.ctx || this.globalVolume <= 0) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.connect(gain); gain.connect(this.ctx.destination);
-        const now = this.ctx.currentTime;
-        const vol = this.globalVolume;
-        
-        if(type === 'shoot') {
-            osc.type = 'square'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-            gain.gain.setValueAtTime(0.05 * vol, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            osc.start(now); osc.stop(now + 0.1);
-        } else if(type === 'hit') {
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
-            gain.gain.setValueAtTime(0.1 * vol, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-            osc.start(now); osc.stop(now + 0.15);
-        } else if(type === 'pickup') {
-            osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(900, now + 0.05);
-            gain.gain.setValueAtTime(0.05 * vol, now); gain.gain.linearRampToValueAtTime(0, now + 0.1);
-            osc.start(now); osc.stop(now + 0.1);
-        } else if(type === 'explosion') {
-            osc.type = 'square'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
-            gain.gain.setValueAtTime(0.2 * vol, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-            osc.start(now); osc.stop(now + 0.5);
-        } else if(type === 'talk') { 
-            osc.type = 'square'; osc.frequency.setValueAtTime(400 + Math.random()*200, now);
-            gain.gain.setValueAtTime(0.02 * vol, now); gain.gain.linearRampToValueAtTime(0, now + 0.05);
-            osc.start(now); osc.stop(now + 0.05); // CORREÇÃO CRÍTICA: Impedir crash do JS
-        } else if(type === 'alert') {
-            osc.type = 'square'; osc.frequency.setValueAtTime(800, now); osc.frequency.setValueAtTime(1200, now + 0.1);
-            gain.gain.setValueAtTime(0.05 * vol, now); gain.gain.linearRampToValueAtTime(0, now + 0.2);
-            osc.start(now); osc.stop(now + 0.2);
-        }
+        const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+        osc.connect(gain); gain.connect(this.ctx.destination); const now = this.ctx.currentTime;
+        if(type === 'shoot') { osc.type = 'square'; osc.frequency.setValueAtTime(300, now); gain.gain.setValueAtTime(0.05 * this.globalVolume, now); osc.start(now); osc.stop(now + 0.1); }
+        else if(type === 'hit') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gain.gain.setValueAtTime(0.1 * this.globalVolume, now); osc.start(now); osc.stop(now + 0.15); }
+        else if(type === 'pickup') { osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); gain.gain.setValueAtTime(0.05 * this.globalVolume, now); osc.start(now); osc.stop(now + 0.1); }
+        else if(type === 'explosion') { osc.type = 'square'; osc.frequency.setValueAtTime(80, now); gain.gain.setValueAtTime(0.2 * this.globalVolume, now); osc.start(now); osc.stop(now + 0.5); }
+        else if(type === 'talk') { osc.type = 'square'; osc.frequency.setValueAtTime(400 + Math.random()*200, now); gain.gain.setValueAtTime(0.02 * this.globalVolume, now); osc.start(now); osc.stop(now + 0.05); }
+        else if(type === 'alert') { osc.type = 'square'; osc.frequency.setValueAtTime(800, now); osc.frequency.setValueAtTime(1200, now + 0.1); gain.gain.setValueAtTime(0.05 * this.globalVolume, now); gain.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); }
     }
 };
 
-const QUOTES = [
-    "O meu mínimo é o meu máximo.",
-    "Erro 404: Sucesso não encontrado.",
-    "A esperança consome muita memória RAM.",
-    "A compilar deceções...",
-    "Porquê debugar se podes ignorar?",
-    "O 'não' você já tem. A humilhação vem agora.",
-    "Se no início não consegue, destrua as evidências.",
-    "Trabalhe duro para pagar pelos erros do seu chefe.",
-    "O segredo do fracasso é começar.",
-    "Não sabendo que era impossível, foi lá e confirmou.",
-    "Nunca é tarde demais para desistir.",
-    "Nada está tão mau que um update não possa piorar.",
-    "Expectativas foram criadas para serem destruídas.",
-    "Lembre-se: você é perfeitamente substituível.",
-    "O seu esforço foi notado... e imediatamente ignorado.",
-    "A carregar a sua próxima crise de ansiedade...",
-    "Prazos são apenas sugestões que o fazem chorar.",
-    "O importante é não tentar.",
-    "Vai dar tudo errado, mas vai render história.",
-    "Foco no objetivo (que é desistir logo)."
-];
+const QUOTES = ["O meu mínimo é o meu máximo.", "Erro 404: Sucesso não encontrado.", "Expectativas destruídas...", "Trabalhe duro para o seu chefe ser rico."];
 
 const STAGE_THEMES = [
-    { 
-        name: "Labirinto Corporativo", floor: 0x1a252c, fog: 0x0f1519, env: 'office',
-        boss: { name: "O Gerente Tóxico", color: 0x5555ff, hp: 1500 },
-        enemies: [ {name: "Reunião Inútil", c: 0x3498db}, {name: "Meta Inatingível", c: 0x9b59b6} ]
-    },
-    { 
-        name: "Ferro-Velho Financeiro", floor: 0x2b2219, fog: 0x16110c, env: 'junkyard',
-        boss: { name: "O Fiscal do Detran", color: 0xffaa00, hp: 2000 },
-        enemies: [ {name: "IPVA Atrasado", c: 0xe74c3c}, {name: "Multa Surpresa", c: 0xf39c12} ]
-    },
-    { 
-        name: "Estúdio das Falsas Aparências", floor: 0x110317, fog: 0x0b020f, env: 'studio',
-        boss: { name: "O Coach Quântico", color: 0xff00ff, hp: 3000 },
-        enemies: [ {name: "Falsa Positividade", c: 0xff77ff}, {name: "Post Patrocinado", c: 0x8a2be2} ]
-    },
-    { 
-        name: "O Lixão do TCC", floor: 0x050a11, fog: 0x020408, env: 'servers',
-        boss: { name: "A Banca Examinadora", color: 0xff0055, hp: 4500 },
-        enemies: [ {name: "Erro de ABNT", c: 0x880000}, {name: "Prazo Estourado", c: 0xcc0033} ]
-    }
+    { name: "Escritório", floor: 0x1a252c, fog: 0x0f1519, env: 'office', boss: { name: "Gerente Tóxico", color: 0x5555ff, hp: 1500 }, enemies: [{name: "Reunião", c: 0x3498db}, {name: "Meta", c: 0x9b59b6}, {name: "E-mail Passivo-Agressivo", c: 0xf1c40f, ranged: true}] },
+    { name: "Ferro-Velho", floor: 0x2b2219, fog: 0x16110c, env: 'junkyard', boss: { name: "Fiscal do Detran", color: 0xffaa00, hp: 2000 }, enemies: [{name: "Multa", c: 0xe74c3c}, {name: "IPVA", c: 0xf39c12}, {name: "Boleto Voador", c: 0x2ecc71, ranged: true}] },
+    { name: "Estúdio", floor: 0x110317, fog: 0x0b020f, env: 'studio', boss: { name: "Coach Quântico", color: 0xff00ff, hp: 3000 }, enemies: [{name: "Post", c: 0xff77ff}, {name: "Falsa Positividade", c: 0x8a2be2}, {name: "Hater de Internet", c: 0xe67e22, ranged: true}] },
+    { name: "Servidor", floor: 0x050a11, fog: 0x020408, env: 'servers', boss: { name: "Banca Examinadora", color: 0xff0055, hp: 4500 }, enemies: [{name: "ABNT", c: 0x880000}, {name: "Prazo", c: 0xcc0033}, {name: "Vírus de Pen Drive", c: 0x00ffcc, ranged: true}] }
 ];
 
 const CHARACTERS = [
-    {
-        id: 'desiludido', name: 'Desiludido', icon: '💻', color: '#3498db',
-        desc: 'A sua armadura é feita de promessas quebradas e código esparguete.',
-        pros: 'Adaptável de acordo com a Habilidade.', cons: 'Lento devido ao peso da depressão.',
-        stats: { hp: 100, speed: 14, damage: 15, fireRate: 400 },
-        abilities: [
-            { name: "Código Esparguete (Espalhado)", type: "spread", dmgMod: 1, fireMod: 1 },
-            { name: "TCC Atrasado (Pesado)", type: "heavy", dmgMod: 2.5, fireMod: 1.8 },
-            { name: "Choro (Rápido)", type: "rapid", dmgMod: 0.6, fireMod: 0.4 }
-        ],
-        intros: [
-            "O escritório... Onde os sonhos morrem em planilhas de Excel. Mais um dia sem ser promovido.",
-            "O ferro-velho. Faz-lhe lembrar a época em que bateu o carro do chefe.",
-            "Luzes de estúdio. Ele tentou ser tech influencer para pagar as contas... falhou.",
-            "O servidor central. Aqui jaz o seu TCC, corrompido para sempre."
-        ]
-    },
-    {
-        id: 'dono_1_0', name: 'Dono do Motor 1.0', icon: '🚗', color: '#e74c3c',
-        desc: 'Preso num loop infinito de prestações automóveis.',
-        pros: 'Veloz para fugir das multas.', cons: 'Motor Engasgado: 20% chance do tiro falhar.',
-        stats: { hp: 80, speed: 20, damage: 10, fireRate: 200 },
-        abilities: [
-            { name: "Tampão (Rápido)", type: "rapid", dmgMod: 1, fireMod: 1 },
-            { name: "Óleo (Espalhado)", type: "spread", dmgMod: 0.8, fireMod: 1.5 },
-            { name: "Motor Fundido (Área)", type: "aoe", dmgMod: 1.5, fireMod: 2.5 }
-        ],
-        intros: [
-            "A garagem corporativa. Onde o estacionamento é mais caro que o seu carro.",
-            "O seu habitat natural. Peças enferrujadas que ele nunca vai conseguir comprar.",
-            "As luzes ofuscam a sua visão, lembrando-lhe os radares de velocidade.",
-            "Os servidores do Detran... Se ele destruir isto, as multas desaparecem?"
-        ]
-    },
-    {
-        id: 'enferrujado', name: 'Enferrujado', icon: '⚙️', color: '#e67e22',
-        desc: 'Hardware obsoleto por dentro.',
-        pros: 'Resistente a falhas de energia.', cons: 'Curto alcance nos disparos.',
-        stats: { hp: 150, speed: 15, damage: 25, fireRate: 600 },
-        abilities: [
-            { name: "Tétano (Curto)", type: "short", dmgMod: 1, fireMod: 1 },
-            { name: "Engrenagem (Espalhado)", type: "spread", dmgMod: 0.7, fireMod: 1.2 },
-            { name: "Bigorna (Pesado)", type: "heavy", dmgMod: 2.0, fireMod: 1.5 }
-        ],
-        intros: [
-            "O ar condicionado deste escritório ataca as suas juntas não lubrificadas.",
-            "Tantos irmãos caídos nesta lixeira. Ele sabe que será o próximo.",
-            "As câmaras gravam a sua obsolescência programada.",
-            "Arquivos digitais inalcançáveis. Preso na nostalgia do Windows 95."
-        ]
-    },
-    {
-        id: 'walloser', name: 'Wall-Oser', icon: '🤖', color: '#9b59b6',
-        desc: 'Rejeitado pela reciclagem. Vive de bateria a 1%.',
-        pros: 'Agilidade de processador overclockado.', cons: 'Vida máxima patética.',
-        stats: { hp: 60, speed: 25, damage: 30, fireRate: 800 },
-        abilities: [
-            { name: "Compactação (Área)", type: "aoe", dmgMod: 1, fireMod: 1 },
-            { name: "Bateria (Pesado)", type: "heavy", dmgMod: 1.5, fireMod: 1.2 },
-            { name: "Curto (Espalhado)", type: "spread", dmgMod: 0.6, fireMod: 0.8 }
-        ],
-        intros: [
-            "Lixo de escritório. Clipes tortos e relatórios descartados...",
-            "O paraíso do lixo! Mas a bateria a 1% não deixa aproveitar.",
-            "Demasiado brilho. O ecrã gasta o último fôlego da bateria viciada.",
-            "Data centers gigantes. Só queria um cabo USB-C humilde."
-        ]
-    }
+    { id: 'desiludido', name: 'Desiludido', icon: '💻', color: '#3498db', desc: 'Armadura de código esparguete.', pros: 'Adaptável.', cons: 'Lento.', stats: { hp: 100, speed: 14, damage: 15, fireRate: 400 }, abilities: [{ name: "Código (Espalhado)", type: "spread", dmgMod: 1, fireMod: 1 }, { name: "TCC (Pesado)", type: "heavy", dmgMod: 2.5, fireMod: 1.8 }, { name: "Choro (Rápido)", type: "rapid", dmgMod: 0.6, fireMod: 0.4 }], intros: ["Dream dies in Excel.", "Battered boss car.", "Failed influencer.", "Corrupted TCC."] },
+    { id: 'dono_1_0', name: 'Dono do Motor 1.0', icon: '🚗', color: '#e74c3c', desc: 'Preso no IPVA.', pros: 'Veloz.', cons: 'Motor engasga.', stats: { hp: 80, speed: 20, damage: 10, fireRate: 200 }, abilities: [{ name: "Tampão", type: "rapid", dmgMod: 1, fireMod: 1 }, { name: "Óleo", type: "spread", dmgMod: 0.8, fireMod: 1.5 }, { name: "Fundido", type: "aoe", dmgMod: 1.5, fireMod: 2.5 }], intros: ["Expensive parking.", "Rusty parts.", "Speed radars.", "Detran servers."] },
+    { id: 'enferrujado', name: 'Enferrujado', icon: '⚙️', color: '#e67e22', desc: 'Hardware obsoleto, mas cínico.', pros: 'Resistente.', cons: 'Curto alcance.', stats: { hp: 150, speed: 15, damage: 25, fireRate: 600 }, abilities: [{ name: "Tétano", type: "short", dmgMod: 1, fireMod: 1 }, { name: "Engrenagem", type: "spread", dmgMod: 0.7, fireMod: 1.2 }, { name: "Bigorna", type: "heavy", dmgMod: 2.0, fireMod: 1.5 }], intros: ["AC joints attack.", "Junkyard home.", "Obsolete recording.", "Windows 95 nostalgia."] },
+    { id: 'walloser', name: 'Wall-Oser', icon: '🤖', color: '#9b59b6', desc: 'Bateria a 1%.', pros: 'Ágil.', cons: 'Frágil.', stats: { hp: 60, speed: 25, damage: 30, fireRate: 800 }, abilities: [{ name: "Compactação", type: "aoe", dmgMod: 1, fireMod: 1 }, { name: "Bateria", type: "heavy", dmgMod: 1.5, fireMod: 1.2 }, { name: "Curto", type: "spread", dmgMod: 0.6, fireMod: 0.8 }], intros: ["Clips and reports.", "1% battery life.", "Screen glare.", "USB-C hunger."] }
 ];
 
 const UPGRADES_DEF = {
@@ -589,35 +471,20 @@ const UPGRADES_DEF = {
 
 const game = {
     state: 'START', stage: 1, wave: 1, parts: 0, lagrimas: 0, selectedChar: null, playerColor: '#3498db',
-    selectedAbilityIdx: 0, selectedArmorIdx: 0, isLoadedGame: false, introInterval: null, storyPhase: 'PROLOGUE',
-    
-    scene: null, camera: null, renderer: null, playerObj: null, orbitGroup: null, marketObj: null, flickeringLights: [],
+    selectedAbilityIdx: 0, selectedArmorIdx: 0, isLoadedGame: false, phase: 'WAVE', timerSeconds: 60,
+    scene: null, camera: null, renderer: null, playerObj: null, orbitGroup: null, 
     enemies: [], bullets: [], props: [], tears: [], crates: [], particles: [], clock: new THREE.Clock(),
-    
-    preview: { scene: null, camera: null, renderer: null, model: null, active: false, isDragging: false, previousX: 0 },
-    dialogueTimeout: null, cameraShake: 0, 
-    
-    pStats: { 
-        hp: 100, maxHp: 100, speed: 20, damage: 10, lastFire: 0, fireRate: 500, type: 'rapid',
-        levels: { hp: 0, dmg: 0, fireRate: 0, spd: 0, auto: 0, dash: 0, shield: 0, panic: 0, roda: 0 },
-        hasUltimate: false, rodaTimer: 0, rodaActive: false
-    },
-    
-    keys: { w:false, a:false, s:false, d:false, shift:false, r:false }, 
-    dash: { active: false, timer: 0, cooldown: 0, duration: 0.15, maxCooldown: 1.5, multiplier: 4 },
-    shield: { mesh: null, active: false, timer: 0, cooldown: 0 },
+    preview: { active: false, model: null, scene: null, camera: null, renderer: null, isDragging: false, previousX: 0 },
+    pStats: { hp: 100, maxHp: 100, speed: 20, damage: 10, fireRate: 500, type: 'rapid', levels: { hp:0, dmg:0, fireRate:0, spd:0, auto:0, dash:0, shield:0, panic:0, roda:0 }, hasUltimate: false, rodaActive: false, rodaTimer: 0 },
+    keys: { w:false, a:false, s:false, d:false, shift:false, r:false },
+    dash: { active: false, cooldown: 0, maxCooldown: 1.5, multiplier: 4, timer: 0, duration: 0.15 },
+    shield: { active: false, timer: 0, cooldown: 0, mesh: null },
     ultimate: { active: false, timer: 0, cooldown: 0, maxCooldown: 10, effectMesh: null },
-    crateTimer: 0, nukeEffect: null,
+    cameraShake: 0, flashMats: {}, mouse: new THREE.Vector2(), raycaster: new THREE.Raycaster(), aimPoint: new THREE.Vector3(), mousePlane: null,
+    bossActive: false, bossObj: null, bossHp: 1000, bossMaxHp: 1000, currentShopItems: [], isMobile: false, jMove: { active: false, x: 0, y: 0, id: null }, isMobileAttacking: false, virtualMouse: { x: 0, y: 0 },
+    miniBossSpawned: false,
 
-    virtualMouse: { x: window.innerWidth/2, y: window.innerHeight/2 },
-    mouse: new THREE.Vector2(), raycaster: new THREE.Raycaster(), aimPoint: new THREE.Vector3(),
-    bossObj: null, bossActive: false, bossHp: 1000, bossMaxHp: 1000, isFinalBoss: false,
-    phase: 'WAVE', timerSeconds: 120, currentShopItems: [],
-    isMobile: false, jMove: { active: false, x: 0, y: 0, id: null }, isMobileAttacking: false,
-    flashMats: {}, 
-    
     initUI() {
-        this.checkSave();
         this.setupMobileControls();
         const container = document.getElementById('char-container');
         CHARACTERS.forEach((c, idx) => {
@@ -628,222 +495,71 @@ const game = {
                 card.classList.add('selected'); this.selectedChar = c; this.playerColor = c.color;
                 if(this.preview.active) this.updatePreviewModel();
             };
-            card.innerHTML = `
-                <div class="char-img" style="color:${c.color}">${c.icon}</div>
-                <div class="char-name">${c.name}</div>
-                <div class="char-stats">
-                    <span style="color:#aaa; font-style:italic;">"${c.desc}"</span><br><br>
-                    <b style="color:#00ffcc">Vantagem:</b> ${c.pros}<br><br>
-                    <b style="color:#e74c3c">Falha:</b> ${c.cons}<br><br>
-                    <div style="text-align:center; color:#fff; width:100%; margin-top:5px;">HP: ${c.stats.hp} | SPD: ${c.stats.speed}</div>
-                </div>
-            `;
+            card.innerHTML = `<div class="char-img" style="color:${c.color}">${c.icon}</div><div class="char-name">${c.name}</div><div class="char-stats">${c.desc}<br><br>HP: ${c.stats.hp} | SPD: ${c.stats.speed}</div>`;
             container.appendChild(card);
         });
         this.selectedChar = CHARACTERS[0];
-        
         this.initPreview3D();
-        requestAnimationFrame(() => this.loop());
-
-        window.addEventListener('blur', () => { this.keys = {w:false, a:false, s:false, d:false, shift:false, r:false}; });
-
-        window.addEventListener('keydown', e => { 
-            const key = e.key.toLowerCase();
-            if(this.keys.hasOwnProperty(key)) this.keys[key] = true; 
-            if(e.key === 'Shift') this.keys.shift = true;
-            if(e.key === 'Escape' || key === 'p') {
-                sfx.play('hit');
-                if(this.state === 'PLAYING' && this.phase !== 'SHOP') this.pauseGame(); 
-                else if(this.state === 'PAUSED') this.resumeGame();
-            }
-            
-            if (this.state === 'PLAYING' && this.phase === 'SHOP') {
-                if (key === '1' && this.currentShopItems[0]) {
-                    if (this.currentShopItems[0].id === 'ULT') this.buyUltimate();
-                    else this.buySkill(this.currentShopItems[0].id, this.currentShopItems[0].cost);
-                }
-                if (key === '2' && this.currentShopItems[1]) this.buySkill(this.currentShopItems[1].id, this.currentShopItems[1].cost);
-                if (key === '3' && this.currentShopItems[2]) this.buySkill(this.currentShopItems[2].id, this.currentShopItems[2].cost);
-                if (key === 'b') { sfx.play('hit'); this.closeMarket(); }
-            }
-        });
-        window.addEventListener('keyup', e => { 
-            const key = e.key.toLowerCase();
-            if(this.keys.hasOwnProperty(key)) this.keys[key] = false; 
-            if(e.key === 'Shift') this.keys.shift = false;
-        });
+        this.checkSave();
+        window.addEventListener('keydown', e => { let k = e.key.toLowerCase(); if(this.keys.hasOwnProperty(k)) this.keys[k] = true; if(e.key === 'Shift') this.keys.shift = true; });
+        window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(this.keys.hasOwnProperty(k)) this.keys[k] = false; if(e.key === 'Shift') this.keys.shift = false; });
         window.addEventListener('mousemove', e => {
             if(this.isMobile) return;
-            if (document.pointerLockElement) { 
-                this.virtualMouse.x = Math.max(0, Math.min(window.innerWidth, this.virtualMouse.x + e.movementX)); 
-                this.virtualMouse.y = Math.max(0, Math.min(window.innerHeight, this.virtualMouse.y + e.movementY)); 
-            } else { 
-                this.virtualMouse.x = e.clientX; 
-                this.virtualMouse.y = e.clientY; 
-            }
-            this.mouse.x = (this.virtualMouse.x / window.innerWidth) * 2 - 1; 
-            this.mouse.y = -(this.virtualMouse.y / window.innerHeight) * 2 + 1;
-            
-            const ch = document.getElementById('crosshair'); 
-            if(ch) { 
-                ch.style.left = this.virtualMouse.x + 'px'; 
-                ch.style.top = this.virtualMouse.y + 'px'; 
-            }
+            if(document.pointerLockElement) { this.virtualMouse.x += e.movementX; this.virtualMouse.y += e.movementY; } else { this.virtualMouse.x = e.clientX; this.virtualMouse.y = e.clientY; }
+            this.mouse.x = (this.virtualMouse.x / window.innerWidth) * 2 - 1; this.mouse.y = -(this.virtualMouse.y / window.innerHeight) * 2 + 1;
+            const ch = document.getElementById('crosshair'); if(ch) { ch.style.left = this.virtualMouse.x + 'px'; ch.style.top = this.virtualMouse.y + 'px'; }
         });
-        window.addEventListener('mousedown', (e) => { 
-            if(this.isMobile) return;
-            if(this.state === 'PLAYING') {
-                if (e.target.id === 'pause-btn') return;
-                if (document.pointerLockElement) {
-                    this.shoot();
-                } else {
-                    this.safeRequestPointerLock();
-                }
-            } 
-        });
-        document.addEventListener('pointerlockchange', () => {
-            if (!this.isMobile && !document.pointerLockElement && this.state === 'PLAYING' && this.phase !== 'SHOP') {
-                this.pauseGame();
-            }
-        });
-        window.addEventListener('resize', () => {
-            if(this.camera) { this.camera.aspect = window.innerWidth / window.innerHeight; this.camera.updateProjectionMatrix(); this.renderer.setSize(window.innerWidth, window.innerHeight); }
-        });
-    },
-
-    safeRequestPointerLock() {
-        if (this.isMobile) return;
-        try {
-            const promise = document.body.requestPointerLock();
-            if (promise !== undefined && typeof promise.catch === 'function') {
-                promise.catch(e => { });
-            }
-        } catch (e) {}
+        window.addEventListener('mousedown', () => { if(!this.isMobile && this.state === 'PLAYING') { if(!document.pointerLockElement) document.body.requestPointerLock(); else this.shoot(); } });
+        requestAnimationFrame(() => this.loop());
     },
 
     setupMobileControls() {
         this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         if(!this.isMobile) return;
-        
         document.getElementById('crosshair').style.display = 'none';
-        
-        const setupJoystick = (zoneId, stateObj) => {
-            const zone = document.getElementById(zoneId);
-            const knob = zone.querySelector('.joystick-knob');
-            
-            zone.addEventListener('touchstart', e => {
-                e.preventDefault();
-                const rect = zone.getBoundingClientRect();
-                const centerX = rect.left + rect.width/2;
-                const centerY = rect.top + rect.height/2;
-                const maxRadius = rect.width/2;
-
-                for(let i=0; i<e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    if(stateObj.id === null) {
-                        stateObj.id = touch.identifier;
-                        stateObj.active = true;
-                        this.updateKnob(touch, centerX, centerY, maxRadius, knob, stateObj);
-                        break;
-                    }
-                }
-            }, {passive: false});
-
-            zone.addEventListener('touchmove', e => {
-                e.preventDefault();
-                const rect = zone.getBoundingClientRect();
-                const centerX = rect.left + rect.width/2;
-                const centerY = rect.top + rect.height/2;
-                const maxRadius = rect.width/2;
-
-                for(let i=0; i<e.changedTouches.length; i++) {
-                    if(e.changedTouches[i].identifier === stateObj.id) {
-                        this.updateKnob(e.changedTouches[i], centerX, centerY, maxRadius, knob, stateObj);
-                        break;
-                    }
-                }
-            }, {passive: false});
-
-            const endTouch = e => {
-                for(let i=0; i<e.changedTouches.length; i++) {
-                    if(e.changedTouches[i].identifier === stateObj.id) {
-                        stateObj.id = null;
-                        stateObj.active = false;
-                        stateObj.x = 0; stateObj.y = 0;
-                        knob.style.transform = `translate(-50%, -50%)`;
-                        break;
-                    }
-                }
-            };
-            zone.addEventListener('touchend', endTouch);
-            zone.addEventListener('touchcancel', endTouch);
-        };
-
-        setupJoystick('joystick-move', this.jMove);
-
+        const zone = document.getElementById('joystick-move'); const knob = zone.querySelector('.joystick-knob');
+        zone.addEventListener('touchstart', e => { e.preventDefault(); this.jMove.id = e.changedTouches[0].identifier; this.jMove.active = true; }, {passive:false});
+        zone.addEventListener('touchmove', e => {
+            e.preventDefault(); const touch = Array.from(e.changedTouches).find(t => t.identifier === this.jMove.id); if(!touch) return;
+            const rect = zone.getBoundingClientRect(); const cx = rect.left + rect.width/2; const cy = rect.top + rect.height/2; const maxR = rect.width/2;
+            let dx = touch.clientX - cx; let dy = touch.clientY - cy; const dist = Math.hypot(dx, dy); if(dist > maxR) { dx = (dx/dist)*maxR; dy = (dy/dist)*maxR; }
+            knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; this.jMove.x = dx / maxR; this.jMove.y = dy / maxR;
+        }, {passive:false});
+        zone.addEventListener('touchend', () => { this.jMove.active = false; this.jMove.id = null; knob.style.transform = 'translate(-50%, -50%)'; this.jMove.x = 0; this.jMove.y = 0; });
         document.getElementById('btn-attack').addEventListener('touchstart', (e) => { e.preventDefault(); this.isMobileAttacking = true; });
-        document.getElementById('btn-attack').addEventListener('touchend', (e) => { e.preventDefault(); this.isMobileAttacking = false; });
-        document.getElementById('btn-attack').addEventListener('touchcancel', (e) => { e.preventDefault(); this.isMobileAttacking = false; });
-
+        document.getElementById('btn-attack').addEventListener('touchend', () => { this.isMobileAttacking = false; });
         document.getElementById('btn-dash').addEventListener('touchstart', (e) => { e.preventDefault(); this.keys.shift = true; });
-        document.getElementById('btn-dash').addEventListener('touchend', (e) => { e.preventDefault(); this.keys.shift = false; });
-        document.getElementById('btn-ult-mob').addEventListener('touchstart', (e) => { e.preventDefault(); this.keys.r = true; });
-        document.getElementById('btn-ult-mob').addEventListener('touchend', (e) => { e.preventDefault(); this.keys.r = false; });
-    },
-
-    updateKnob(touch, cx, cy, maxR, knob, stateObj) {
-        let dx = touch.clientX - cx;
-        let dy = touch.clientY - cy;
-        const dist = Math.hypot(dx, dy);
-        if(dist > maxR) { dx = (dx/dist)*maxR; dy = (dy/dist)*maxR; }
-        knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        stateObj.x = dx / maxR;
-        stateObj.y = dy / maxR;
-    },
-
-    formatTime(seconds) {
-        const m = Math.floor(Math.max(0, seconds) / 60);
-        const s = Math.floor(Math.max(0, seconds) % 60);
-        return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        document.getElementById('btn-dash').addEventListener('touchend', () => { this.keys.shift = false; });
     },
 
     switchScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         if(id) document.getElementById(id).classList.add('active');
-        document.getElementById('hud').style.display = (id === null && this.state === 'PLAYING') ? 'block' : 'none';
-        document.getElementById('hud-center').style.display = (id === null && this.state === 'PLAYING') ? 'block' : 'none';
-        document.getElementById('mobile-controls').style.display = (this.isMobile && id === null && this.state === 'PLAYING') ? 'block' : 'none';
-        
-        const ch = document.getElementById('crosshair');
-        if (ch && !this.isMobile) ch.style.display = (id === null && this.state === 'PLAYING') ? 'block' : 'none';
-        
+        document.getElementById('hud').style.display = (id === null) ? 'block' : 'none';
+        document.getElementById('hud-center').style.display = (id === null) ? 'block' : 'none';
+        document.getElementById('mobile-controls').style.display = (this.isMobile && id === null) ? 'block' : 'none';
         this.preview.active = (id === 'screen-customize');
     },
 
-    showSelect() { this.switchScreen('screen-select'); }, showHowToPlay() { this.switchScreen('screen-howtoplay'); },
-    
-    fakeRemap() {
-        const btn = document.querySelector("button[onclick='game.fakeRemap()']");
-        if (btn) btn.innerText = "ACESSO NEGADO 🤡";
-        this.showDialogue("Comandante Fiasco", "Achas que tens controlo sobre a tua vida? Tenta lidar com o que tens!", 4000);
-        setTimeout(() => { if (btn) btn.innerText = "Alterar Controles"; }, 4000);
-    },
-    
+    showSelect() { this.switchScreen('screen-select'); },
     showCustomize() { 
         this.switchScreen('screen-customize'); this.updatePreviewModel();
         document.getElementById('ab-0').innerText = this.selectedChar.abilities[0].name;
         document.getElementById('ab-1').innerText = this.selectedChar.abilities[1].name;
         document.getElementById('ab-2').innerText = this.selectedChar.abilities[2].name;
-        document.querySelector('input[name="ability"][value="0"]').checked = true;
-        document.querySelector(`input[name="armor"][value="${this.selectedArmorIdx}"]`).checked = true;
     },
 
-    updateArmor(val) { this.selectedArmorIdx = parseInt(val); if(this.preview.model) this.updatePreviewModel(); },
+    updateColor(hex, el) { 
+        document.querySelectorAll('.c-box').forEach(b => b.classList.remove('selected')); el.classList.add('selected'); 
+        this.playerColor = hex; if(this.preview.active) this.updatePreviewModel(); 
+    },
+
+    updateArmor(val) { this.selectedArmorIdx = parseInt(val); if(this.preview.active) this.updatePreviewModel(); },
 
     toggleFullscreen() {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(err => {
-                this.showDialogue("Sistema", "Não foi possível ativar tela cheia no seu dispositivo.");
+                console.log("Tela cheia não suportada ou bloqueada.");
             });
         } else {
             if (document.exitFullscreen) {
@@ -855,245 +571,32 @@ const game = {
     initPreview3D() {
         const container = document.getElementById('customize-preview');
         this.preview.scene = new THREE.Scene(); this.preview.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-        // AJUSTE DE ECRÃ: Centralização e profundidade para evitar cortes no herói
-        this.preview.camera.position.set(0, 3.8, 13); this.preview.camera.lookAt(0, 3.5, 0);
+        this.preview.camera.position.set(0, 4.2, 14); this.preview.camera.lookAt(0, 3.5, 0);
         this.preview.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.preview.renderer.setSize(220, 220); container.appendChild(this.preview.renderer.domElement);
         this.preview.scene.add(new THREE.AmbientLight(0xffffff, 0.8));
         const light = new THREE.DirectionalLight(0xffffff, 0.5); light.position.set(5, 10, 5); this.preview.scene.add(light);
-
-        const onDown = (e) => {
-            this.preview.isDragging = true;
-            this.preview.previousX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        };
+        
+        const onDown = (e) => { this.preview.isDragging = true; this.preview.previousX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX; };
         const onMove = (e) => {
             if (this.preview.isDragging && this.preview.model) {
                 const currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-                const deltaX = currentX - this.preview.previousX;
-                this.preview.model.rotation.y += deltaX * 0.015;
-                this.preview.previousX = currentX;
+                this.preview.model.rotation.y += (currentX - this.preview.previousX) * 0.02; this.preview.previousX = currentX;
             }
         };
         const onUp = () => { this.preview.isDragging = false; };
-
-        container.addEventListener('mousedown', onDown);
-        container.addEventListener('mousemove', onMove);
-        container.addEventListener('mouseup', onUp);
-        container.addEventListener('mouseleave', onUp);
-        container.addEventListener('touchstart', onDown, {passive: true});
-        container.addEventListener('touchmove', onMove, {passive: true});
-        container.addEventListener('touchend', onUp);
-        container.addEventListener('touchcancel', onUp);
+        container.addEventListener('mousedown', onDown); container.addEventListener('mousemove', onMove); container.addEventListener('mouseup', onUp);
+        container.addEventListener('touchstart', onDown, {passive: true}); container.addEventListener('touchmove', onMove, {passive: true}); container.addEventListener('touchend', onUp);
     },
 
     updatePreviewModel() {
         if(this.preview.model) { this.preview.scene.remove(this.preview.model); this.disposeObject(this.preview.model); }
         this.preview.model = this.createVoxelCharacter(this.playerColor, false, this.selectedArmorIdx, this.selectedChar.id);
-        this.preview.model.position.y = 1; 
-        this.preview.scene.add(this.preview.model);
-    },
-
-    checkSave() {
-        const btn = document.getElementById('btn-continue');
-        if(localStorage.getItem('constelacao_save')) btn.style.display = 'block'; else btn.style.display = 'none';
-    },
-
-    saveGame() {
-        const data = {
-            stage: this.stage, parts: this.parts, lagrimas: this.lagrimas,
-            charId: this.selectedChar.id, color: this.playerColor, abIdx: this.selectedAbilityIdx, arIdx: this.selectedArmorIdx,
-            stats: { 
-                maxHp: this.pStats.maxHp, speed: this.pStats.speed, damage: this.pStats.damage, 
-                fireRate: this.pStats.fireRate, type: this.pStats.type, levels: this.pStats.levels, hasUltimate: this.pStats.hasUltimate 
-            },
-            dashMax: this.dash.maxCooldown
-        };
-        localStorage.setItem('constelacao_save', JSON.stringify(data));
-    },
-
-    loadGame() {
-        const data = JSON.parse(localStorage.getItem('constelacao_save'));
-        if(data) {
-            this.isLoadedGame = true; this.stage = data.stage; this.parts = data.parts; this.lagrimas = data.lagrimas || 0;
-            this.selectedChar = CHARACTERS.find(c => c.id === data.charId) || CHARACTERS[0];
-            this.playerColor = data.color; this.selectedAbilityIdx = data.abIdx || 0; this.selectedArmorIdx = data.arIdx || 0;
-            this.pStats = { 
-                ...this.selectedChar.stats, maxHp: data.stats.maxHp, speed: data.stats.speed, 
-                damage: data.stats.damage, fireRate: data.stats.fireRate, type: data.stats.type, 
-                levels: data.stats.levels || { hp:0, dmg:0, fireRate:0, spd:0, auto:0, dash:0, shield:0, panic:0, roda:0 },
-                hasUltimate: data.stats.hasUltimate || false, rodaTimer: 0, rodaActive: false
-            };
-            this.pStats.hp = this.pStats.maxHp;
-            if(data.dashMax) this.dash.maxCooldown = data.dashMax;
-            this.startLoading();
-        }
-    },
-
-    pauseGame() { 
-        if(this.state === 'PLAYING' && this.phase !== 'SHOP') { 
-            this.state = 'PAUSED'; 
-            this.switchScreen('screen-pause'); 
-            if (!this.isMobile && document.pointerLockElement) document.exitPointerLock();
-        } 
-    },
-    resumeGame() { 
-        if(this.state === 'PAUSED') { 
-            this.state = 'PLAYING'; 
-            this.switchScreen(null); 
-            this.clock.getDelta(); 
-            this.safeRequestPointerLock();
-        } 
-    },
-    saveAndQuit() { this.saveGame(); location.reload(); },
-
-    changeVolume(delta) {
-        sfx.globalVolume = Math.max(0, Math.min(1, sfx.globalVolume + delta));
-        document.getElementById('vol-display').innerText = Math.round(sfx.globalVolume * 100) + '%';
-        sfx.play('pickup');
-    },
-
-    updateColor(hex, el) {
-        document.querySelectorAll('.c-box').forEach(b => b.classList.remove('selected'));
-        if (el) el.classList.add('selected'); 
-        this.playerColor = hex;
-        if(this.preview.model) this.updatePreviewModel();
-    },
-
-    showDialogue(name, text, duration = 4000) {
-        sfx.play('alert');
-        const box = document.getElementById('dialogue-box');
-        document.getElementById('dialogue-name').innerText = name; document.getElementById('dialogue-text').innerText = text;
-        box.style.display = 'block'; 
-        if(this.dialogueTimeout) clearTimeout(this.dialogueTimeout);
-        this.dialogueTimeout = setTimeout(() => box.style.display = 'none', duration);
-    },
-
-    startLoading() {
-        this.state = 'LOADING';
-        if(!this.isLoadedGame) {
-            const abInput = document.querySelector('input[name="ability"]:checked');
-            if(abInput) this.selectedAbilityIdx = parseInt(abInput.value);
-            this.pStats.levels = { hp: 0, dmg: 0, fireRate: 0, spd: 0, auto: 0, dash: 0, shield: 0, panic: 0, roda: 0 };
-            this.pStats.hasUltimate = false;
-            this.pStats.rodaTimer = 0;
-            this.pStats.rodaActive = false;
-            this.pStats.damage = this.selectedChar.stats.damage * this.selectedChar.abilities[this.selectedAbilityIdx].dmgMod;
-            this.pStats.fireRate = this.selectedChar.stats.fireRate * this.selectedChar.abilities[this.selectedAbilityIdx].fireMod;
-            this.pStats.type = this.selectedChar.abilities[this.selectedAbilityIdx].type;
-            this.pStats.maxHp = this.selectedChar.stats.hp;
-            this.pStats.hp = this.pStats.maxHp;
-        }
-        document.getElementById('loading-quote').innerText = `"${QUOTES[Math.floor(Math.random() * QUOTES.length)]}"`;
-        this.switchScreen('screen-loading');
-        setTimeout(() => {
-            if(this.stage === 1 && !this.isLoadedGame) this.startStory('PROLOGUE');
-            else this.startStory('CHAR_INTRO');
-        }, 3000);
-    },
-
-    startStory(phase) {
-        this.storyPhase = phase;
-        this.state = 'STORY';
-        const textEl = document.getElementById('story-text'); textEl.innerHTML = "";
-        document.getElementById('story-btn').style.display = 'none';
-        
-        let title = "COMANDANTE FIASCO", content = "";
-        if(phase === 'PROLOGUE') {
-            title = "A QUEDA DO ROBÔ DA PERFEIÇÃO";
-            content = "Comandante Fiasco: Atenção, Esquadrão! O projeto 'Robô da Perfeição', a nossa maior esperança, colapsou sob o peso da burocracia corporativa, prazos impossíveis e café frio.\n\nEle explodiu e dividiu-se em 4 Peças Fundamentais que foram parar às 4 Dimensões da Decepção (Escritório, Ferro-Velho, Estúdio e Servidor).\n\nO vosso objetivo: Sobreviver ao caos, recuperar as peças e remontar o Robô. Não que eu acredite no vosso sucesso, mas... boa sorte. Vão precisar.";
-            document.getElementById('story-btn').innerText = "Ouvir Ladainhas Individuais";
-        } else if (phase === 'CHAR_INTRO') {
-            title = "DIÁRIO DE: " + this.selectedChar.name.toUpperCase();
-            content = this.selectedChar.intros[Math.min(this.stage - 1, 3)];
-            document.getElementById('story-btn').innerText = "Seguir para a Derrota";
-        } else if (phase === 'PRE_BOSS') {
-            title = "O ENCONTRO FINAL";
-            content = "Robô Fracasso: BZZZT... Vocês juntaram as minhas peças. Tolos! Achavam que podiam consertar o que já nasceu quebrado? Eu sou a personificação dos vossos prazos estourados e sonhos destruídos!\n\n" + this.selectedChar.name + ": O meu nível de desespero vai acabar contigo! A tua perfeição é uma farsa!\n\nRobô Fracasso: VEREMOS. PREPARAR PARA A EXCLUSÃO DEFINITIVA.";
-            document.getElementById('story-btn').innerText = "Iniciar Batalha Épica";
-        } else if (phase === 'EPILOGUE') {
-            title = "O FRACASSO ABSOLUTO";
-            content = "Comandante Fiasco: Inacreditável... Vocês derrotaram o Robô! Mas... esperem...\n\n[SISTEMA]: O Robô da Perfeição percebeu que o mundo é imperfeito, pediu demissão e fugiu com as vossas lágrimas.\n\nComandante Fiasco: Bem, o que vocês esperavam? Pelo menos fracassaram com uma eficiência brilhante. O vazio saúda-vos, heróis.";
-            document.getElementById('story-btn').innerText = "Aceitar o Destino";
-        }
-
-        document.getElementById('story-title').innerText = title;
-        this.switchScreen('screen-story');
-
-        let i = 0;
-        if(this.introInterval) clearInterval(this.introInterval);
-        this.introInterval = setInterval(() => {
-            if(i < content.length) { 
-                if(content.charAt(i) === '\n') textEl.innerHTML += '<br>';
-                else textEl.innerHTML += content.charAt(i); 
-                if (content.charAt(i) !== ' ' && i % 2 === 0) sfx.play('talk');
-                i++; 
-            }
-            else { clearInterval(this.introInterval); document.getElementById('story-btn').style.display = 'block'; }
-        }, 30);
-    },
-
-    advanceStory() {
-        if(this.storyPhase === 'PROLOGUE') this.startStory('CHAR_INTRO');
-        else if(this.storyPhase === 'CHAR_INTRO') this.startLevelPhase();
-        else if(this.storyPhase === 'PRE_BOSS') {
-            this.state = 'PLAYING';
-            this.switchScreen(null);
-            this.phase = 'BOSS';
-            this.startFinalBoss();
-        }
-        else if(this.storyPhase === 'EPILOGUE') {
-            this.state = 'WIN';
-            this.switchScreen('screen-win');
-        }
-    },
-
-    startLevelPhase() {
-        this.state = 'PLAYING'; 
-        this.switchScreen(null); 
-        
-        if(!this.scene) this.init3D();
-        
-        this.buildStageEnvironment();
-        
-        if(!this.playerObj) {
-            this.playerObj = this.createVoxelCharacter(this.playerColor, false, this.selectedArmorIdx, this.selectedChar.id);
-            this.scene.add(this.playerObj);
-        }
-        this.playerObj.position.set(0, 2, 0);
-        this.pStats.hp = this.pStats.maxHp;
-        
-        this.enemies.forEach(e => { this.scene.remove(e); this.disposeObject(e); }); this.enemies = [];
-        this.bullets.forEach(b => { this.scene.remove(b); this.disposeObject(b); }); this.bullets = [];
-        this.tears.forEach(t => { this.scene.remove(t); this.disposeObject(t); }); this.tears = [];
-        this.crates.forEach(c => { this.scene.remove(c); this.disposeObject(c); }); this.crates = [];
-        this.particles.forEach(p => { this.scene.remove(p); this.disposeObject(p); }); this.particles = [];
-        
-        if(this.marketObj) { this.scene.remove(this.marketObj); this.disposeObject(this.marketObj); this.marketObj = null; }
-        if(this.nukeEffect) { this.scene.remove(this.nukeEffect.mesh); this.disposeObject(this.nukeEffect.mesh); this.nukeEffect = null; }
-        
-        this.pStats.rodaTimer = 2;
-        this.pStats.rodaActive = false;
-        this.crateTimer = 0;
-        this.spawnRoda();
-
-        this.wave = 1; this.phase = 'WAVE'; 
-        this.timerSeconds = 60; 
-        this.bossActive = false; this.isFinalBoss = false;
-        if(this.bossObj) { this.scene.remove(this.bossObj); this.disposeObject(this.bossObj); this.bossObj = null; }
-        
-        this.saveGame();
-        document.getElementById('player-name-hud').innerText = this.selectedChar.name.toUpperCase();
-        this.updateHUD();
-
-        this.safeRequestPointerLock();
-
-        if(this.stage === 1) this.showDialogue("Comandante Fiasco", "Apanha as Lágrimas dos inimigos! A Loja cai no fim do tempo.", 6000);
-        else this.showDialogue("Comandante Fiasco", `Fase ${this.stage}: 5 Ondas Detectadas.`, 4000);
+        this.preview.model.position.y = 1; this.preview.scene.add(this.preview.model);
     },
 
     disposeObject(o) { 
-        if(!o) return; 
-        if(o.geometry) o.geometry.dispose(); 
+        if(!o) return; if(o.geometry) o.geometry.dispose(); 
         if(o.material) { if(Array.isArray(o.material)) o.material.forEach(m=>m.dispose()); else o.material.dispose(); } 
         if(o.children) {
             const children = [...o.children];
@@ -1103,284 +606,309 @@ const game = {
 
     createVoxelCharacter(colorHex, isEnemy = false, armorType = 0, charId = 'desiludido') {
         const group = new THREE.Group();
-        let matColor = colorHex, darkColor = 0x111111;
-        let isSuitEnemy = false;
+        let matColor = colorHex; if(isEnemy) matColor = STAGE_THEMES[this.stage-1].enemies[0].c;
+        const armorMat = new THREE.MeshStandardMaterial({color: matColor, metalness: isEnemy ? 0.2 : 0.7, roughness: 0.3});
+        const silverMat = new THREE.MeshStandardMaterial({color: matColor, metalness: 0.95, roughness: 0.05});
+        const divineGold = new THREE.MeshStandardMaterial({color: matColor, metalness: 0.8, roughness: 0.2, emissive: matColor, emissiveIntensity: 0.25});
+        const skinMat = new THREE.MeshStandardMaterial({color: 0xffccaa, roughness: 0.8});
+        const darkMat = new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.9});
+        const hairMat = new THREE.MeshStandardMaterial({color: 0x3a2311, roughness: 0.9});
+        const blackMat = new THREE.MeshBasicMaterial({color: 0x000000});
 
-        if(isEnemy) {
-            if(this.stage === 1) { matColor = 0x222222; darkColor = 0x111111; isSuitEnemy = true; } 
-            else if(this.stage === 2) { matColor = 0xcd6133; darkColor = 0x5c4033; } 
-            else if(this.stage === 3) { matColor = 0xff1493; darkColor = 0x00ffff; } 
-            else if(this.stage === 4) { matColor = 0x00ff00; darkColor = 0x000000; } 
-        }
+        let activeChestMat = armorMat; if(!isEnemy) { if(armorType === 1) activeChestMat = silverMat; else if(armorType === 2) activeChestMat = divineGold; }
+        const partsToFlash = [];
 
-        const armorMat = new THREE.MeshStandardMaterial({color: matColor, metalness: isEnemy ? 0.2 : 0.7, roughness: isEnemy ? 0.9 : 0.3});
-        const silverMat = new THREE.MeshStandardMaterial({color: matColor, metalness: 0.95, roughness: 0.05}); 
-        const divineGold = new THREE.MeshStandardMaterial({color: matColor, metalness: 0.8, roughness: 0.2, emissive: matColor, emissiveIntensity: 0.25}); 
+        const headGroup = new THREE.Group(); group.add(headGroup);
+        const head = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), skinMat); head.position.y = 5; headGroup.add(head); partsToFlash.push(head);
         
-        const skinMat = new THREE.MeshStandardMaterial({color: isSuitEnemy ? 0xffccaa : 0xffdcb3, roughness: 0.8}); 
-        const darkMat = new THREE.MeshStandardMaterial({color: darkColor, roughness: 0.9});
-        const hairMat = new THREE.MeshStandardMaterial({color: isEnemy ? (isSuitEnemy ? 0x111111 : 0x550000) : 0x3a2311, roughness: 0.9}); 
-        const beltMat = new THREE.MeshStandardMaterial({color: 0x332211, roughness: 0.8}); 
-        const gloveMat = new THREE.MeshStandardMaterial({color: 0x222222, roughness: 0.7}); 
+        const addHair = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), hairMat); m.position.set(x,y,z); headGroup.add(m); partsToFlash.push(m); };
+        if(charId === 'enferrujado' || charId === 'walloser') { addHair(2.1, 1.1, 0.15, 0, 4.95, -1.075); addHair(0.15, 1.1, 1.6, -1.075, 4.95, -0.2); addHair(0.15, 1.1, 1.6, 1.075, 4.95, -0.2); }
+        else { addHair(2.1, 0.15, 2.1, 0, 6.075, 0); addHair(2.1, 1.6, 0.15, 0, 5.2, -1.075); }
 
-        let activeChestMat = armorMat;
-        let activeBootMat = darkMat;
-        let activeBeltMat = beltMat;
-
-        if (!isEnemy) {
-            if (armorType === 1) { activeChestMat = silverMat; activeBootMat = silverMat; } 
-            else if (armorType === 2) { activeChestMat = divineGold; activeBootMat = divineGold; activeBeltMat = divineGold; }
-        }
-
-        const partsToFlash = []; 
-        const headGroup = new THREE.Group();
-        group.add(headGroup);
-
-        const head = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), skinMat); 
-        head.position.y = 5; head.castShadow = true; 
-        headGroup.add(head); partsToFlash.push(head);
+        const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.05), new THREE.MeshBasicMaterial({color:0xffffff})); eyeL.position.set(-0.4, 5.2, 1.01); headGroup.add(eyeL);
+        const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.05), new THREE.MeshBasicMaterial({color:0xffffff})); eyeR.position.set(0.4, 5.2, 1.01); headGroup.add(eyeR);
         
-        const hairGroup = new THREE.Group();
-        let hasBeard = false;
+        const eBL = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.1,0.1), isEnemy?blackMat:hairMat); eBL.position.set(-0.4, 5.45, 1.02); eBL.rotation.z = 0.25; headGroup.add(eBL);
+        const eBR = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.1,0.1), isEnemy?blackMat:hairMat); eBR.position.set(0.4, 5.45, 1.02); eBR.rotation.z = -0.25; headGroup.add(eBR);
 
-        const addHair = (w, h, d, x, y, z) => {
-            const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), hairMat);
-            m.position.set(x, y, z); m.castShadow = true;
-            hairGroup.add(m); partsToFlash.push(m);
-        };
-
-        if (!isEnemy) {
-            if (charId === 'desiludido') {
-                addHair(2.1, 0.15, 2.1, 0, 6.075, 0); 
-                addHair(2.1, 1.6, 0.15, 0, 5.2, -1.075); 
-                addHair(0.15, 1.6, 1.5, -1.075, 5.2, -0.25); 
-                addHair(0.15, 1.6, 1.5, 1.075, 5.2, -0.25); 
-                hasBeard = true;
-            } else if (charId === 'dono_1_0') {
-                addHair(2.1, 0.15, 2.1, 0, 6.075, 0); 
-                addHair(2.1, 1.6, 0.15, 0, 5.2, -1.075); 
-                addHair(0.9, 0.4, 0.15, -0.6, 5.8, 1.075); 
-                addHair(0.9, 0.4, 0.15, 0.6, 5.8, 1.075); 
-                hasBeard = true;
-            } else if (charId === 'enferrujado' || charId === 'walloser') {
-                addHair(2.1, 1.1, 0.15, 0, 4.95, -1.075); 
-                addHair(0.15, 1.1, 1.6, -1.075, 4.95, -0.2); 
-                addHair(0.15, 1.1, 1.6, 1.075, 4.95, -0.2); 
-                hasBeard = (charId === 'enferrujado'); 
-            }
+        if(!isEnemy && charId === 'enferrujado') {
+            const mC = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.1,0.05), blackMat); mC.position.set(-0.05, 4.45, 1.01); headGroup.add(mC);
+            const mU = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.15,0.05), blackMat); mU.position.set(0.15, 4.475, 1.01); headGroup.add(mU);
         } else {
-            addHair(2.1, 0.15, 2.1, 0, 6.075, 0);
-            addHair(2.1, 1.6, 0.15, 0, 5.2, -1.075);
+            const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.1,0.05), blackMat); mouth.position.set(0, 4.45, 1.01); headGroup.add(mouth);
         }
 
-        if (hasBeard) {
-            addHair(2.1, 0.35, 0.15, 0, 4.175, 1.075); 
-        }
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 3, 1), activeChestMat); body.position.y = 2.5; group.add(body); partsToFlash.push(body);
+        const armL = new THREE.Group(); armL.position.set(-1.3, 3.5, 0); const sL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2, 0.7), activeChestMat); sL.position.y = -0.5; armL.add(sL); group.add(armL); partsToFlash.push(sL);
+        const armR = new THREE.Group(); armR.position.set(1.3, 3.5, 0); const sR = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2, 0.7), activeChestMat); sR.position.y = -0.5; armR.add(sR); group.add(armR); partsToFlash.push(sR);
+        const legL = new THREE.Group(); legL.position.set(-0.5, 1, 0); const bL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.5, 0.8), darkMat); bL.position.y = -0.5; legL.add(bL); group.add(legL); partsToFlash.push(bL);
+        const legR = new THREE.Group(); legR.position.set(0.5, 1, 0); const bR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.5, 0.8), darkMat); bR.position.y = -0.5; legR.add(bR); group.add(legR); partsToFlash.push(bR);
 
-        headGroup.add(hairGroup); 
-
-        let eyesArr = [];
-        if (!isEnemy || isSuitEnemy) {
-            const whiteMat = new THREE.MeshBasicMaterial({color: 0xffffff}); 
-            const blackMat = new THREE.MeshBasicMaterial({color: 0x000000});
-            const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.05), whiteMat); eyeL.position.set(-0.4, 5.2, 1.01);
-            const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.05), whiteMat); eyeR.position.set(0.4, 5.2, 1.01);
-            eyesArr.push(eyeL, eyeR); 
-
-            const eyebrowL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.1), isEnemy ? blackMat : hairMat); 
-            eyebrowL.position.set(-0.4, 5.45, 1.02);
-            const eyebrowR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.1), isEnemy ? blackMat : hairMat); 
-            eyebrowR.position.set(0.4, 5.45, 1.02);
-            headGroup.add(eyebrowL, eyebrowR);
-            headGroup.add(eyeL, eyeR);
-        }
-
-        const bodyUnder = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.8, 0.8), darkMat); 
-        bodyUnder.position.y = 2.4; bodyUnder.castShadow = true; 
-        group.add(bodyUnder); partsToFlash.push(bodyUnder);
-
-        let chestPlateObj = null;
-        if (!isEnemy || armorType > 0) {
-            const chestPlate = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.5, 1.1), activeChestMat);
-            chestPlate.position.y = 2.9; chestPlate.castShadow = true;
-            group.add(chestPlate); partsToFlash.push(chestPlate);
-            chestPlateObj = chestPlate;
-        }
-
-        const armL = new THREE.Group(); armL.position.set(-1.3, 3.5, 0); 
-        const sleeveL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.2, 0.7), activeChestMat); 
-        sleeveL.position.y = -0.5; armL.add(sleeveL); group.add(armL); partsToFlash.push(sleeveL);
-
-        const armR = new THREE.Group(); armR.position.set(1.3, 3.5, 0); 
-        const sleeveR = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.2, 0.7), activeChestMat); 
-        sleeveR.position.y = -0.5; armR.add(sleeveR); group.add(armR); partsToFlash.push(sleeveR);
-
-        const legL = new THREE.Group(); legL.position.set(-0.5, 1, 0); 
-        const bootL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.5, 0.8), activeBootMat); 
-        bootL.position.y = -0.7; legL.add(bootL); group.add(legL); partsToFlash.push(bootL);
-        
-        const legR = new THREE.Group(); legR.position.set(0.5, 1, 0); 
-        const bootR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.5, 0.8), activeBootMat); 
-        bootR.position.y = -0.7; legR.add(bootR); group.add(legR); partsToFlash.push(bootR);
-
-        group.userData = { 
-            parts: partsToFlash, 
-            animParts: { armL, armR, legL, legR, headGroup, bodyUnder, chestPlate: chestPlateObj, eyes: eyesArr }, 
-            shootAnimTimer: 0, 
-            blinkTimer: Math.random() * 4,
-            breatheOffset: Math.random() * Math.PI * 2
-        };
+        group.userData = { parts: partsToFlash, animParts: {armL, armR, legL, legR, headGroup, body}, breatheOff: Math.random()*Math.PI*2, blinkTimer: 2, shootAnimTimer: 0, attackAnimTimer: 0 };
         return group;
     },
 
+    flashCharacter(char, col) {
+        if(!char || !char.userData.parts) return; if(!this.flashMats[col]) this.flashMats[col] = new THREE.MeshBasicMaterial({color: col});
+        const fMat = this.flashMats[col]; char.userData.parts.forEach(p => { if(!p.userData.oM) p.userData.oM = p.material; p.material = fMat; });
+        setTimeout(() => { if(char && char.userData.parts) char.userData.parts.forEach(p => { if(p.userData.oM) p.material = p.userData.oM; }); }, 100);
+    },
+
     init3D() {
-        const container = document.getElementById('canvas-container');
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/innerHeight, 0.1, 1000);
-        this.camera.position.set(0, 35, 35); this.camera.lookAt(0, 0, 0);
-
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.shadowMap.enabled = true;
-        container.appendChild(this.renderer.domElement);
-
-        this.scene.add(new THREE.AmbientLight(0xaaaaee, 0.8)); // Aumentado para melhor visibilidade
-        const dirLight = new THREE.DirectionalLight(0xcceeff, 1.0);
-        dirLight.position.set(20, 40, 20); dirLight.castShadow = true;
-        this.scene.add(dirLight);
-
-        this.floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
-        this.floor.rotation.x = -Math.PI/2; this.floor.receiveShadow = true;
-        this.scene.add(this.floor);
-
-        this.mousePlane = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshBasicMaterial({visible: false}));
-        this.mousePlane.rotation.x = -Math.PI/2; this.scene.add(this.mousePlane);
-
+        const cont = document.getElementById('canvas-container'); this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/innerHeight, 0.1, 1000); this.camera.position.set(0,35,35);
+        this.renderer = new THREE.WebGLRenderer({antialias:true}); this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setSize(window.innerWidth, window.innerHeight); cont.appendChild(this.renderer.domElement);
+        this.scene.add(new THREE.AmbientLight(0xaaaaee, 0.7)); const dL = new THREE.DirectionalLight(0xcceeff, 1); dL.position.set(20,40,20); this.scene.add(dL);
+        this.floor = new THREE.Mesh(new THREE.PlaneGeometry(200,200), new THREE.MeshStandardMaterial({color:0xcccccc})); this.floor.rotation.x = -Math.PI/2; this.scene.add(this.floor);
+        this.mousePlane = new THREE.Mesh(new THREE.PlaneGeometry(1000,1000), new THREE.MeshBasicMaterial({visible:false})); this.mousePlane.rotation.x = -Math.PI/2; this.scene.add(this.mousePlane);
         this.orbitGroup = new THREE.Group(); this.scene.add(this.orbitGroup);
-        this.updateHUD();
+        this.playerObj = this.createVoxelCharacter(this.playerColor, false, this.selectedArmorIdx, this.selectedChar.id); this.scene.add(this.playerObj);
+        this.ultimate.effectMesh = new THREE.Mesh(new THREE.SphereGeometry(1,32,32), new THREE.MeshBasicMaterial({color:0xff00ff, transparent:true, opacity:0.5})); this.scene.add(this.ultimate.effectMesh);
     },
 
-    toggleFullscreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(() => {});
-        } else if (document.exitFullscreen) {
-            document.exitFullscreen();
+    startLoading() {
+        this.state = 'LOADING'; this.switchScreen('screen-loading');
+        if(!this.isLoadedGame) {
+            const abIdx = document.querySelector('input[name="ability"]:checked').value; this.selectedAbilityIdx = parseInt(abIdx);
+            const c = this.selectedChar; this.pStats = {...c.stats, type: c.abilities[abIdx].type, levels: {hp:0, dmg:0, fireRate:0, spd:0, auto:0, dash:0, shield:0, panic:0, roda:0}, maxHp: c.stats.hp, hp: c.stats.hp};
+            this.pStats.damage *= c.abilities[abIdx].dmgMod; this.pStats.fireRate *= c.abilities[abIdx].fireMod;
         }
+        setTimeout(() => this.startLevelPhase(), 2000);
     },
 
-    closeMarket() {
-        this.switchScreen(null);
-        if(this.marketObj) { this.scene.remove(this.marketObj); this.disposeObject(this.marketObj); this.marketObj = null; }
+    startLevelPhase() {
+        this.state = 'PLAYING'; this.switchScreen(null); if(!this.scene) this.init3D();
+        const theme = STAGE_THEMES[this.stage-1]; this.floor.material.color.setHex(theme.floor); this.scene.fog = new THREE.Fog(theme.fog, 10, 65);
+        this.playerObj.position.set(0,2,0); this.wave = 1; this.timerSeconds = 60; this.enemies.forEach(e => {this.scene.remove(e); this.disposeObject(e);}); this.enemies = [];
+        this.bossActive = false; this.isFinalBoss = false; this.miniBossSpawned = false;
+        if(this.bossObj) { this.scene.remove(this.bossObj); this.disposeObject(this.bossObj); this.bossObj = null; }
+        document.getElementById('player-name-hud').innerText = this.selectedChar.name; this.updateHUD();
+    },
+
+    shoot() {
+        const now = Date.now(); if(now - this.pStats.lastFire < this.pStats.fireRate) return; this.pStats.lastFire = now; sfx.play('shoot');
+        const dir = new THREE.Vector3().subVectors(this.aimPoint, this.playerObj.position).normalize(); dir.y = 0;
+        const b = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,1.5), new THREE.MeshBasicMaterial({color:0x00ffcc})); b.position.copy(this.playerObj.position).add(new THREE.Vector3(0,3,0));
+        b.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir); b.userData = {dir:dir, speed:55, damage:this.pStats.damage, life:0, isPlayer:true};
+        this.scene.add(b); this.bullets.push(b);
+    },
+
+    takeDamage(amt) { if(this.dash.active || this.shield.active) return; this.pStats.hp -= amt; this.cameraShake = 0.5; this.flashCharacter(this.playerObj, 0xff0000); sfx.play('hit'); this.updateHUD(); if(this.pStats.hp <= 0) this.gameOver(); },
+    
+    updateHUD() {
+        document.getElementById('health-bar-fill').style.width = (this.pStats.hp/this.pStats.maxHp)*100 + '%';
+        document.getElementById('parts-text').innerText = `${this.parts}/4`; document.getElementById('hud-lagrimas').innerText = this.lagrimas;
+        document.getElementById('wave-text').innerText = `ONDA ${this.wave}/5`;
+    },
+
+    spawnEnemy() {
+        if(this.enemies.length > 12) return; 
+        const theme = STAGE_THEMES[Math.min(this.stage - 1, 3)];
+        const eData = theme.enemies[Math.floor(Math.random() * theme.enemies.length)];
+        const e = this.createVoxelCharacter(eData.c, true);
+        const ang = Math.random()*Math.PI*2; e.position.set(Math.cos(ang)*40, 2, Math.sin(ang)*40);
         
-        this.wave++;
-        if (this.wave <= 5) {
-            this.phase = 'WAVE';
-            this.timerSeconds = 60;
-            this.safeRequestPointerLock();
-            this.showDialogue("Comandante Fiasco", `Iniciando Onda ${this.wave}/5`, 3000);
-        } else {
-            if (this.stage === 4) this.startStory('PRE_BOSS');
-            else { this.phase = 'BOSS'; this.startFinalBoss(); }
+        const waveScale = 1 + (this.wave * 0.2);
+        let baseHp = 40 * this.stage;
+        if (this.stage === 1) {
+            baseHp = 20; 
+            if (this.wave === 1) baseHp = 8; 
+        }
+        const finalHp = baseHp * waveScale;
+        
+        e.userData = {hp: finalHp, speed: 6+this.stage, damage: 10 + (this.stage*5), isRanged: eData.ranged || false, rangedColor: eData.c}; 
+        this.scene.add(e); this.enemies.push(e);
+    },
+
+    enemyShoot(pos, color) {
+        if(this.phase === 'BOSS_DEATH' || !this.playerObj) return;
+        const dir = new THREE.Vector3().subVectors(this.playerObj.position, pos).normalize(); dir.y = 0;
+        sfx.play('shoot');
+        const bullet = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 1.2), new THREE.MeshBasicMaterial({ color: color }));
+        bullet.position.copy(pos); bullet.position.y = 2;
+        bullet.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir);
+        bullet.userData = { dir: dir, speed: 20, damage: 15 + (this.stage * 2), isPlayer: false, life: 0, rotSpeed: {x: 0.2, y: 0.5, z: 0} };
+        this.scene.add(bullet); this.bullets.push(bullet);
+    },
+
+    spawnMiniBoss() {
+        this.showDialogue("Sistema", "ALERTA: MINI-CHEFE DETECTADO! MAIS LÁGRIMAS!", 3000);
+        sfx.play('alert');
+        const enemy = this.createVoxelCharacter(0xff2200, true, 0, 'enemy'); 
+        const angle = Math.random() * Math.PI * 2;
+        enemy.position.set(Math.cos(angle)*40, 3, Math.sin(angle)*40);
+        enemy.scale.set(1.8, 1.8, 1.8);
+        const waveScale = 1 + (this.wave * 0.2);
+        const finalHp = 150 * this.stage * waveScale;
+        Object.assign(enemy.userData, { 
+            hp: finalHp, speed: 4 + this.wave, maxHp: finalHp, damage: 20 + (this.stage*5),
+            isMiniBoss: true
+        });
+        this.scene.add(enemy); this.enemies.push(enemy);
+    },
+
+    spawnRoda() {
+        while(this.orbitGroup.children.length > 0) {
+            let child = this.orbitGroup.children[0]; this.orbitGroup.remove(child); this.disposeObject(child);
+        }
+        if(!this.pStats.rodaActive || this.pStats.levels.roda === 0) return;
+        const radius = 8; const tearsCount = 3 + this.pStats.levels.roda;
+        for(let i=0; i<tearsCount; i++) {
+            const angle = (i / tearsCount) * Math.PI * 2;
+            const tear = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 4), new THREE.MeshBasicMaterial({ color: 0x00aaff }));
+            tear.position.set(Math.cos(angle)*radius, 0, Math.sin(angle)*radius);
+            tear.rotation.x = Math.PI/2; tear.rotation.z = -angle; this.orbitGroup.add(tear);
         }
     },
 
     loop() {
-        requestAnimationFrame(() => this.loop());
-        const dt = Math.min(this.clock.getDelta(), 0.1); // Cap delta to avoid jumps
-        
-        if(this.preview.active && this.preview.model && this.preview.renderer) {
-            this.preview.renderer.render(this.preview.scene, this.preview.camera);
-            this.applyWalkingAnim(this.preview.model, 0.5, false, dt); 
-            return;
-        }
+        requestAnimationFrame(() => this.loop()); const dt = Math.min(this.clock.getDelta(), 0.1);
+        if(this.preview.active && this.preview.renderer) { this.preview.renderer.render(this.preview.scene, this.preview.camera); return; }
+        if(this.state !== 'PLAYING') return;
 
-        if(this.state !== 'PLAYING' || !this.playerObj || !this.playerObj.position) return;
-
-        this.flickeringLights.forEach(l => { if(Math.random() < 0.1) l.intensity = Math.random() * 1.5; });
-
-        // Logic for Wave management
-        if (this.phase === 'WAVE') {
-            this.timerSeconds -= dt;
-            document.getElementById('timer-text').innerText = this.formatTime(this.timerSeconds);
-            if(Math.random() < 0.02) this.spawnEnemy();
-            if (this.timerSeconds <= 0) { this.timerSeconds = 0; this.spawnMarket(); }
-        } else if (this.phase === 'SHOP_DROP') {
-            if(this.marketObj && this.marketObj.position.y > 0) this.marketObj.position.y -= 30 * dt;
-            if(this.marketObj && this.playerObj.position.distanceTo(this.marketObj.position) < 5) this.openMarket();
-        } else if (this.phase === 'SHOP') {
-            this.timerSeconds -= dt;
-            document.getElementById('timer-text').innerText = this.formatTime(this.timerSeconds);
-            if (this.timerSeconds <= 0) this.closeMarket();
-        }
-
-        // MOVEMENT
-        let dx = 0, dz = 0;
-        if(this.keys.w) dz -= 1; if(this.keys.s) dz += 1; if(this.keys.a) dx -= 1; if(this.keys.d) dx += 1;
-        if(this.isMobile && this.jMove.active) {
-            dx = this.jMove.x; dz = this.jMove.y;
-            let dist = Math.hypot(dx, dz);
-            if(dist < 0.05) { dx = 0; dz = 0; }
-            else if(dist > 0.3) { dx /= dist; dz /= dist; } 
-        }
-
-        const isWalking = (dx !== 0 || dz !== 0);
-        if(isWalking) {
-            const mag = Math.sqrt(dx*dx + dz*dz) || 1;
-            const moveX = (dx/mag) * this.pStats.speed * dt;
-            const moveZ = (dz/mag) * this.pStats.speed * dt;
-            if(!this.checkCollision(this.playerObj.position.x + moveX, this.playerObj.position.z)) this.playerObj.position.x += moveX;
-            if(!this.checkCollision(this.playerObj.position.x, this.playerObj.position.z + moveZ)) this.playerObj.position.z += moveZ;
-            this.playerObj.rotation.y = Math.atan2(dx, dz);
-        }
-
-        // Camera Update
-        this.camera.position.x = this.playerObj.position.x; 
-        this.camera.position.z = this.playerObj.position.z + 25;
-        this.camera.lookAt(this.playerObj.position);
-        if (this.cameraShake > 0) {
-            this.camera.position.x += (Math.random() - 0.5) * this.cameraShake * 3;
-            this.cameraShake -= dt * 2;
-        }
-
-        // Mobile Auto-Aim
-        if (this.isMobile && this.isMobileAttacking) {
-            let target = null, minDist = 30;
-            this.enemies.forEach(e => {
-                let d = this.playerObj.position.distanceTo(e.position);
-                if (d < minDist) { minDist = d; target = e; }
-            });
-            if (target) {
-                const dir = new THREE.Vector3().subVectors(target.position, this.playerObj.position).normalize();
-                this.playerObj.rotation.y = Math.atan2(dir.x, dir.z);
+        if(this.phase === 'WAVE') {
+            this.timerSeconds -= dt; document.getElementById('timer-text').innerText = Math.ceil(this.timerSeconds);
+            
+            if (this.timerSeconds <= 30 && !this.miniBossSpawned) {
+                this.miniBossSpawned = true;
+                this.spawnMiniBoss();
             }
-            this.aimPoint.set(this.playerObj.position.x + Math.sin(this.playerObj.rotation.y)*10, 0, this.playerObj.position.z + Math.cos(this.playerObj.rotation.y)*10);
-            this.shoot();
+
+            if(Math.random() < 0.02) this.spawnEnemy(); if(this.timerSeconds <= 0) { this.wave++; if(this.wave > 5) this.nextStage(); else { this.timerSeconds = 60; this.miniBossSpawned = false; } }
         }
 
-        this.enemies.forEach(e => {
+        let dx = 0, dz = 0; if(this.keys.w) dz -= 1; if(this.keys.s) dz += 1; if(this.keys.a) dx -= 1; if(this.keys.d) dx += 1;
+        if(this.isMobile && this.jMove.active) { let dist = Math.hypot(this.jMove.x, this.jMove.y); if(dist > 0.05) { dx = this.jMove.x / (dist > 0.3 ? dist : 1); dz = this.jMove.y / (dist > 0.3 ? dist : 1); } }
+        
+        const isWalking = (dx !== 0 || dz !== 0);
+        
+        if(isWalking) {
+            const mag = Math.sqrt(dx*dx + dz*dz); const mX = (dx/mag)*this.pStats.speed*dt; const mZ = (dz/mag)*this.pStats.speed*dt;
+            this.playerObj.position.x += mX; this.playerObj.position.z += mZ;
+            this.playerObj.position.y = 2 + Math.abs(Math.sin(Date.now()*0.015)) * 0.3;
+        } else {
+            this.playerObj.position.y = 2;
+        }
+        this.playerObj.position.x = Math.max(-45, Math.min(45, this.playerObj.position.x));
+        this.playerObj.position.z = Math.max(-45, Math.min(45, this.playerObj.position.z));
+
+        let targetAngle = null;
+
+        if (this.isMobile) {
+            if (this.isMobileAttacking) {
+                let target = null, minDist = 30;
+                this.enemies.forEach(e => {
+                    let d = this.playerObj.position.distanceTo(e.position);
+                    if (d < minDist) { minDist = d; target = e; }
+                });
+                
+                if (this.bossActive && this.bossObj && this.playerObj.position.distanceTo(this.bossObj.position) < 45) {
+                    target = this.bossObj;
+                }
+
+                if (target) {
+                    const dir = new THREE.Vector3().subVectors(target.position, this.playerObj.position).normalize();
+                    targetAngle = Math.atan2(dir.x, dir.z);
+                } else if (isWalking) {
+                    targetAngle = Math.atan2(dx, dz);
+                }
+            } else if (isWalking) {
+                targetAngle = Math.atan2(dx, dz);
+            }
+
+            if (targetAngle !== null) {
+                if (this.isMobileAttacking && targetAngle !== Math.atan2(dx, dz)) {
+                    let diff = targetAngle - this.playerObj.rotation.y;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    this.playerObj.rotation.y += diff * 18 * dt; 
+                } else {
+                    this.playerObj.rotation.y = targetAngle;
+                }
+            }
+            
+            this.aimPoint.set(this.playerObj.position.x + Math.sin(this.playerObj.rotation.y)*10, 0, this.playerObj.position.z + Math.cos(this.playerObj.rotation.y)*10);
+            if (this.isMobileAttacking) this.shoot();
+        } else {
+            this.raycaster.setFromCamera(this.mouse, this.camera); const hits = this.raycaster.intersectObject(this.mousePlane);
+            if(hits.length > 0) { 
+                this.aimPoint.copy(hits[0].point); 
+                const d = new THREE.Vector3().subVectors(this.aimPoint, this.playerObj.position).normalize(); 
+                this.playerObj.rotation.y = Math.atan2(d.x, d.z); 
+            }
+        }
+
+        this.camera.position.set(this.playerObj.position.x, 35, this.playerObj.position.z + 35); this.camera.lookAt(this.playerObj.position);
+        if(this.cameraShake > 0) { this.camera.position.x += (Math.random()-0.5)*this.cameraShake*2; this.cameraShake -= dt; }
+
+        this.enemies.forEach((e, i) => {
             const dir = new THREE.Vector3().subVectors(this.playerObj.position, e.position).normalize();
-            e.position.addScaledVector(dir, e.userData.speed * dt);
-            e.rotation.y = Math.atan2(dir.x, dir.z);
-            if(e.position.distanceTo(this.playerObj.position) < 2.5) this.takeDamage(e.userData.damage);
+            const dist = e.position.distanceTo(this.playerObj.position);
+            const stopDist = e.userData.isRanged ? 15.0 : 3.0;
+
+            if (dist > stopDist) {
+                e.position.addScaledVector(dir, e.userData.speed*dt);
+            } else {
+                if (e.userData.isRanged) {
+                    if (!e.userData.lastAttack || Date.now() - e.userData.lastAttack > 2000) {
+                        e.userData.lastAttack = Date.now();
+                        this.enemyShoot(e.position, e.userData.rangedColor);
+                    }
+                } else {
+                    if (!e.userData.lastAttack || Date.now() - e.userData.lastAttack > 1200) {
+                        e.userData.lastAttack = Date.now();
+                        this.takeDamage(e.userData.damage);
+                    }
+                }
+            }
+            e.rotation.y = Math.atan2(dir.x, dir.z); 
         });
 
-        // Main Render
+        for(let i=this.bullets.length-1; i>=0; i--) {
+            let b = this.bullets[i]; b.position.addScaledVector(b.userData.dir, b.userData.speed*dt); b.userData.life += dt;
+            let hit = false; 
+
+            if(b.userData.rotSpeed) { b.rotation.x += b.userData.rotSpeed.x || 0; b.rotation.y += b.userData.rotSpeed.y || 0; b.rotation.z += b.userData.rotSpeed.z || 0; }
+            
+            if (b.userData.isPlayer) {
+                this.enemies.forEach((e, ei) => { 
+                    if(b.position.distanceTo(e.position) < 3) { 
+                        e.userData.hp -= b.userData.damage; this.flashCharacter(e, 0xffffff); hit = true; 
+                        if(e.userData.hp <= 0) { 
+                            this.spawnTear(e.position, e.userData.isMiniBoss ? 15 : 1);
+                            this.enemies.splice(ei, 1); this.scene.remove(e); this.lagrimas += 5; this.updateHUD(); sfx.play('explosion'); 
+                        } 
+                    } 
+                });
+            } else {
+                if(b.position.distanceTo(this.playerObj.position) < 2) { this.takeDamage(b.userData.damage); hit = true; }
+            }
+
+            if(hit || b.userData.life > 2) { this.scene.remove(b); this.bullets.splice(i, 1); }
+        }
         this.renderer.render(this.scene, this.camera);
     },
+    nextStage() { this.parts++; this.stage++; if(this.stage > 4) this.switchScreen('screen-win'); else this.startLevelPhase(); },
+    gameOver() { this.switchScreen('screen-gameover'); },
+    checkSave() {}, saveAndQuit() { location.reload(); }, pauseGame() { this.state = 'PAUSED'; this.switchScreen('screen-pause'); }, resumeGame() { this.state = 'PLAYING'; this.switchScreen(null); },
+    
+    // RECOMPENSA EXTRA DO BOSS FINAL
+    completeStage() {
+        this.lagrimas += 50; // Bónus por derrotar o Boss!
+        this.parts++; this.updateHUD();
+        this.enemies.forEach(e => { this.scene.remove(e); this.disposeObject(e); }); this.enemies = [];
 
-    // Sincronização de nomes sem o "O"
-    updateHUD() {
-        document.getElementById('health-bar-fill').style.width = (this.pStats.hp / this.pStats.maxHp * 100) + '%';
-        document.getElementById('parts-text').innerText = `${this.parts} / 4`;
-        document.getElementById('hud-lagrimas').innerText = this.lagrimas;
-        document.getElementById('wave-text').innerText = `ONDA ${this.wave}/5`;
+        if(this.parts >= 4) {
+            if(!this.isMobile && document.pointerLockElement) document.exitPointerLock();
+            this.startStory('EPILOGUE');
+        } else {
+            this.stage++; 
+            this.showDialogue("Comandante Fiasco", "Chefe Derrotado! +50 Lágrimas recebidas.", 3000);
+            setTimeout(() => this.startLoading(), 3000); 
+        }
     }
 };
 
-// Aliases e inicialização
-const Mesh = THREE.Mesh;
 window.onload = () => game.initUI();
 </script>
-</body>
-</html>
