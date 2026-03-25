@@ -2363,35 +2363,46 @@ const game = {
         let targetAngle = null;
 
         if (this.isMobile) {
-            if (this.isMobileAttacking) {
-                let target = null, minDist = 30;
-                this.enemies.forEach(e => {
-                    let d = this.playerObj.position.distanceTo(e.position);
-                    if (d < minDist) { minDist = d; target = e; }
-                });
+            if (this.jShoot.active) {
+                let sdx = this.jShoot.x;
+                let sdy = this.jShoot.y;
+                let dist = Math.hypot(sdx, sdy);
                 
-                if (this.bossActive && this.bossObj && this.playerObj.position.distanceTo(this.bossObj.position) < 45) {
-                    target = this.bossObj;
-                }
+                this.isMobileAttacking = true;
 
-                if (target) {
-                    const dir = new THREE.Vector3().subVectors(target.position, this.playerObj.position).normalize();
-                    targetAngle = Math.atan2(dir.x, dir.z);
-                } else if (isWalking) {
-                    targetAngle = Math.atan2(dx, dz);
+                if (dist > 0.2) {
+                    targetAngle = Math.atan2(sdx, sdy);
+                } else {
+                    let target = null, minDist = 30;
+                    this.enemies.forEach(e => {
+                        let d = this.playerObj.position.distanceTo(e.position);
+                        if (d < minDist) { minDist = d; target = e; }
+                    });
+                    
+                    if (this.bossActive && this.bossObj && this.playerObj.position.distanceTo(this.bossObj.position) < 45) {
+                        target = this.bossObj;
+                    }
+
+                    if (target) {
+                        const dir = new THREE.Vector3().subVectors(target.position, this.playerObj.position).normalize();
+                        targetAngle = Math.atan2(dir.x, dir.z);
+                    } else if (isWalking) {
+                        targetAngle = Math.atan2(dx, dz);
+                    }
                 }
-            } else if (isWalking) {
-                targetAngle = Math.atan2(dx, dz);
+            } else {
+                this.isMobileAttacking = false;
+                if (isWalking) targetAngle = Math.atan2(dx, dz);
             }
 
             if (targetAngle !== null) {
-                if (this.isMobileAttacking && targetAngle !== Math.atan2(dx, dz)) {
+                if (this.jShoot.active && this.isMobileAttacking) {
+                    this.playerObj.rotation.y = targetAngle;
+                } else {
                     let diff = targetAngle - this.playerObj.rotation.y;
                     while (diff < -Math.PI) diff += Math.PI * 2;
                     while (diff > Math.PI) diff -= Math.PI * 2;
                     this.playerObj.rotation.y += diff * 18 * dt; 
-                } else {
-                    this.playerObj.rotation.y = targetAngle;
                 }
             }
 
