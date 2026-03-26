@@ -188,17 +188,17 @@
             #mobile-controls, .ui-layer, #hud, #hud-center { display: none !important; }
         }
 
-        /* CONTROLOS MOBILE - NOVO LAYOUT */
+        /* CONTROLOS MOBILE - NOVO LAYOUT (TWIN-STICK) */
         #mobile-controls { display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
         .joystick-zone { position: absolute; bottom: 30px; width: 130px; height: 130px; background: rgba(0, 255, 204, 0.1); border: 2px solid rgba(0, 255, 204, 0.4); border-radius: 50%; pointer-events: auto; }
         #joystick-move { left: 40px; }
+        #joystick-shoot { right: 40px; left: auto; border-color: rgba(231, 76, 60, 0.4); background: rgba(231, 76, 60, 0.1); }
+        #joystick-shoot .joystick-knob { background: rgba(231, 76, 60, 0.8); box-shadow: 0 0 10px #e74c3c; }
         .joystick-knob { position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; background: rgba(0, 255, 204, 0.8); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px #00ffcc;}
         
         .action-btn { position: absolute; width: 60px; height: 60px; background: rgba(155, 89, 182, 0.5); border: 2px solid #9b59b6; border-radius: 50%; color: #fff; font-size: 10px; display: flex; justify-content: center; align-items: center; pointer-events: auto; text-shadow: 1px 1px 0 #000; }
-        #btn-attack { right: 30px; bottom: 30px; width: 80px; height: 80px; background: rgba(231, 76, 60, 0.5); border-color: #e74c3c; font-size: 12px; font-weight: bold; box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);}
-        #btn-attack:active { background: #e74c3c; color: #000; }
-        #btn-dash { right: 130px; bottom: 30px; }
-        #btn-ult-mob { right: 100px; bottom: 110px; border-color: #ff00ff; background: rgba(255,0,255,0.5); display: none; }
+        #btn-dash { right: 190px; bottom: 30px; }
+        #btn-ult-mob { right: 150px; bottom: 100px; border-color: #ff00ff; background: rgba(255,0,255,0.5); display: none; }
 
         /* --- OTIMIZAÇÕES EXTREMAS PARA MOBILE (Telas Pequenas em Paisagem) --- */
         @media (max-height: 500px), (max-width: 850px) {
@@ -223,11 +223,12 @@
             .skill-node { width: auto; padding: 8px; font-size: 8px; }
             .story-text { font-size: 9px; padding: 10px; min-height: 80px; margin: 5px; line-height: 1.6; }
             
-            .joystick-zone { width: 90px; height: 90px; bottom: 15px; left: 15px; }
+            .joystick-zone { width: 90px; height: 90px; bottom: 15px; }
+            #joystick-move { left: 15px; }
+            #joystick-shoot { right: 15px; left: auto; }
             .joystick-knob { width: 35px; height: 35px; }
-            #btn-attack { width: 65px; height: 65px; font-size: 10px; right: 15px; bottom: 15px; }
-            #btn-dash { width: 45px; height: 45px; right: 90px; bottom: 15px; font-size: 8px; }
-            #btn-ult-mob { width: 45px; height: 45px; right: 55px; bottom: 85px; font-size: 8px; }
+            #btn-dash { width: 45px; height: 45px; right: 115px; bottom: 15px; font-size: 8px; }
+            #btn-ult-mob { width: 45px; height: 45px; right: 75px; bottom: 95px; font-size: 8px; }
             
             /* Ajustes Finos HUD Mobile - Menos apertado */
             #hud .hud-bar { top: 5px; left: 5px; padding: 5px; transform: scale(0.85); transform-origin: top left; }
@@ -257,7 +258,6 @@
             <button id="btn-continue" class="btn" onclick="sfx.init(); sfx.startMusic(); game.loadGame()" style="display:none; margin-bottom: 10px; background: rgba(0, 255, 204, 0.2);">Continuar Fracasso</button>
             <button class="btn" onclick="sfx.init(); sfx.startMusic(); game.showSelect()">Aceitar e Fracassar</button>
             
-            <!-- Botão de Tela Cheia adicionado -->
             <button id="btn-fs" class="btn" onclick="game.toggleFullscreen()" style="border-color: #ffff00; color: #ffff00; margin-left: 10px;">Tela Cheia 📺</button>
             
             <button id="btn-install" class="btn" style="display:none; border-color: #ff00ff; color: #ff00ff; margin-left: 10px;" onclick="sfx.play('pickup'); window.installPWA()">Instalar App</button>
@@ -277,8 +277,8 @@
                 <span style="color:#ffff00;">[ 1 ] [ 2 ] [ 3 ]</span> : Comprar itens na Loja Rápido<br>
                 <span style="color:#ffff00;">[ B ]</span> : Fechar a Loja imediatamente<br><br>
                 <b>MOBILE:</b><br>
-                <span style="color:#00ffcc;">[JOYSTICK]</span> : Mover / Mirar<br>
-                <span style="color:#e74c3c;">[BOTÃO ATIRAR]</span> : Dispara para onde estás virado!<br>
+                <span style="color:#00ffcc;">[JOYSTICK AZUL]</span> : Andar<br>
+                <span style="color:#e74c3c;">[JOYSTICK VERMELHO]</span> : Arraste para mirar e atirar. Dê um toque para mira automática!<br>
             </div>
             <button class="btn" onclick="sfx.play('hit'); game.fakeRemap()" style="background: #552222; border-color: #ff4444; margin-top: 20px;">Alterar Controles</button>
             <button class="btn" onclick="sfx.play('hit'); game.switchScreen('screen-start')" style="margin-top: 10px;">Voltar e Aceitar a Realidade</button>
@@ -405,7 +405,7 @@
 
     <div id="mobile-controls">
         <div id="joystick-move" class="joystick-zone"><div class="joystick-knob"></div></div>
-        <div id="btn-attack" class="action-btn">ATIRAR</div>
+        <div id="joystick-shoot" class="joystick-zone"><div class="joystick-knob"></div></div>
         <div id="btn-dash" class="action-btn">DASH</div>
         <div id="btn-ult-mob" class="action-btn">ULT</div>
     </div>
@@ -640,7 +640,7 @@ const game = {
     mouse: new THREE.Vector2(), raycaster: new THREE.Raycaster(), aimPoint: new THREE.Vector3(),
     bossObj: null, bossActive: false, bossHp: 1000, bossMaxHp: 1000, isFinalBoss: false,
     phase: 'WAVE', timerSeconds: 120, currentShopItems: [],
-    isMobile: false, jMove: { active: false, x: 0, y: 0, id: null }, isMobileAttacking: false,
+    isMobile: false, jMove: { active: false, x: 0, y: 0, id: null }, jShoot: { active: false, x: 0, y: 0, id: null }, isMobileAttacking: false,
     flashMats: {}, miniBossSpawned: false, loadedWave: null,
     
     initUI() {
@@ -670,9 +670,10 @@ const game = {
         
         this.initPreview3D();
         
-        this.initFirebase().then(() => {
-            requestAnimationFrame(() => this.loop());
-        });
+        // Chamada assíncrona não bloqueante para iniciar a gravação
+        this.initFirebase();
+        // Inicia o render loop de imediato
+        requestAnimationFrame(() => this.loop());
 
         window.addEventListener('blur', () => { this.keys = {w:false, a:false, s:false, d:false, shift:false, r:false}; });
 
@@ -817,10 +818,7 @@ const game = {
         };
 
         setupJoystick('joystick-move', this.jMove);
-
-        document.getElementById('btn-attack').addEventListener('touchstart', (e) => { e.preventDefault(); this.isMobileAttacking = true; });
-        document.getElementById('btn-attack').addEventListener('touchend', (e) => { e.preventDefault(); this.isMobileAttacking = false; });
-        document.getElementById('btn-attack').addEventListener('touchcancel', (e) => { e.preventDefault(); this.isMobileAttacking = false; });
+        setupJoystick('joystick-shoot', this.jShoot);
 
         document.getElementById('btn-dash').addEventListener('touchstart', (e) => { e.preventDefault(); this.keys.shift = true; });
         document.getElementById('btn-dash').addEventListener('touchend', (e) => { e.preventDefault(); this.keys.shift = false; });
@@ -891,8 +889,13 @@ const game = {
 
     initPreview3D() {
         const container = document.getElementById('customize-preview');
-        this.preview.scene = new THREE.Scene(); this.preview.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-        this.preview.camera.position.set(0, 4.2, 14); this.preview.camera.lookAt(0, 3.5, 0);
+        this.preview.scene = new THREE.Scene(); 
+        
+        // CORREÇÃO PREVIEW MOBILE: Câmera puxada para trás e ligeiramente para cima para não cortar a testa do boneco
+        this.preview.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+        this.preview.camera.position.set(0, 4.5, 16); 
+        this.preview.camera.lookAt(0, 4.0, 0);
+        
         this.preview.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.preview.renderer.setSize(220, 220); container.appendChild(this.preview.renderer.domElement);
         this.preview.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
@@ -1444,9 +1447,10 @@ const game = {
                 const pL = new THREE.Mesh(padGeo, activeChestMat); pL.position.set(-0.1, 0.1, 0); pL.rotation.z = 0.2; pL.castShadow = true; armL.add(pL); partsToFlash.push(pL);
                 const pR = new THREE.Mesh(padGeo, activeChestMat); pR.position.set(0.1, 0.1, 0); pR.rotation.z = -0.2; pR.castShadow = true; armR.add(pR); partsToFlash.push(pR);
             } else if (armorType === 1) {
-                const tiara = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.4, 2.2), activeChestMat); tiara.position.y = 5.8; headGroup.add(tiara); partsToFlash.push(tiara);
+                // CORREÇÃO: Tiara da armadura de prata subida de Y=5.8 para Y=6.2 para não bugar com a testa
+                const tiara = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.3, 2.2), activeChestMat); tiara.position.y = 6.2; headGroup.add(tiara); partsToFlash.push(tiara);
                 const tiaraGem = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.3), new THREE.MeshStandardMaterial({color: 0x00ffcc, metalness: 0.8, roughness: 0.2}));
-                tiaraGem.position.set(0, 5.8, 1.15); headGroup.add(tiaraGem); partsToFlash.push(tiaraGem);
+                tiaraGem.position.set(0, 6.2, 1.15); headGroup.add(tiaraGem); partsToFlash.push(tiaraGem);
 
                 const scrapPadGeo = new THREE.BoxGeometry(1.3, 0.8, 1.3);
                 const pL = new THREE.Mesh(scrapPadGeo, activeChestMat); pL.position.set(-0.1, 0.2, 0); pL.rotation.z = 0.1; pL.castShadow = true; armL.add(pL); partsToFlash.push(pL);
@@ -2346,7 +2350,6 @@ const game = {
         this.playerObj.position.x = Math.max(-45, Math.min(45, this.playerObj.position.x));
         this.playerObj.position.z = Math.max(-45, Math.min(45, this.playerObj.position.z));
         
-        // CORREÇÃO DA CÂMERA: Reseta sempre a posição Y para evitar acumulação de shake e o zoom bugar!
         this.camera.position.x = this.playerObj.position.x; 
         this.camera.position.y = 35;
         this.camera.position.z = this.playerObj.position.z + 25;
@@ -2550,7 +2553,6 @@ const game = {
             }
         }
 
-        // CORREÇÃO RODA: Seguir exatamente a posição do jogador
         if(this.orbitGroup) {
             this.orbitGroup.position.copy(this.playerObj.position);
             this.orbitGroup.position.y = 1;
@@ -2587,7 +2589,6 @@ const game = {
             }
         }
 
-        // CORREÇÃO NUKE: Opacidade suave e sem "cegar" a câmera
         if (this.nukeEffect) {
             this.nukeEffect.timer -= dt;
             if (this.nukeEffect.mesh) {
@@ -2691,7 +2692,6 @@ const game = {
             }
         }
 
-        // COLETOR MAGNÉTICO DE LÁGRIMAS TOTALMENTE RESTAURADO
         for(let i = this.tears.length - 1; i >= 0; i--) {
             const t = this.tears[i];
             if(!t || !t.position) continue;
@@ -2726,9 +2726,8 @@ const game = {
     pauseGame() { this.state = 'PAUSED'; this.switchScreen('screen-pause'); }, 
     resumeGame() { this.state = 'PLAYING'; this.switchScreen(null); },
     
-    // RECOMPENSA EXTRA DO BOSS FINAL
     completeStage() {
-        this.lagrimas += 50; // Bónus por derrotar o Boss!
+        this.lagrimas += 50; 
         this.parts++; this.updateHUD();
         this.enemies.forEach(e => { this.scene.remove(e); this.disposeObject(e); }); this.enemies = [];
 
