@@ -54,6 +54,10 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+        :root {
+            --joy-scale: 1; /* Escala global para os analógicos (Controlado pelo JS) */
+        }
+
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             background-color: #010308; font-family: 'Press Start 2P', monospace;
@@ -188,13 +192,13 @@
             #mobile-controls, .ui-layer, #hud, #hud-center { display: none !important; }
         }
 
-        /* CONTROLOS MOBILE - NOVO LAYOUT (TWIN-STICK) */
+        /* CONTROLOS MOBILE - NOVO LAYOUT (TWIN-STICK DINÂMICO) */
         #mobile-controls { display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
-        .joystick-zone { position: absolute; bottom: 30px; width: 130px; height: 130px; background: rgba(0, 255, 204, 0.1); border: 2px solid rgba(0, 255, 204, 0.4); border-radius: 50%; pointer-events: auto; }
+        .joystick-zone { position: absolute; bottom: 30px; width: calc(130px * var(--joy-scale)); height: calc(130px * var(--joy-scale)); background: rgba(0, 255, 204, 0.1); border: 2px solid rgba(0, 255, 204, 0.4); border-radius: 50%; pointer-events: auto; }
         #joystick-move { left: 40px; }
         #joystick-shoot { right: 40px; left: auto; border-color: rgba(231, 76, 60, 0.4); background: rgba(231, 76, 60, 0.1); }
         #joystick-shoot .joystick-knob { background: rgba(231, 76, 60, 0.8); box-shadow: 0 0 10px #e74c3c; }
-        .joystick-knob { position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; background: rgba(0, 255, 204, 0.8); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px #00ffcc;}
+        .joystick-knob { position: absolute; top: 50%; left: 50%; width: calc(40px * var(--joy-scale)); height: calc(40px * var(--joy-scale)); background: rgba(0, 255, 204, 0.8); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px #00ffcc;}
         
         .action-btn { position: absolute; width: 60px; height: 60px; background: rgba(155, 89, 182, 0.5); border: 2px solid #9b59b6; border-radius: 50%; color: #fff; font-size: 10px; display: flex; justify-content: center; align-items: center; pointer-events: auto; text-shadow: 1px 1px 0 #000; }
         #btn-dash { right: 190px; bottom: 30px; }
@@ -223,10 +227,10 @@
             .skill-node { width: auto; padding: 8px; font-size: 8px; }
             .story-text { font-size: 9px; padding: 10px; min-height: 80px; margin: 5px; line-height: 1.6; }
             
-            .joystick-zone { width: 90px; height: 90px; bottom: 15px; }
+            .joystick-zone { width: calc(90px * var(--joy-scale)); height: calc(90px * var(--joy-scale)); bottom: 15px; }
             #joystick-move { left: 15px; }
             #joystick-shoot { right: 15px; left: auto; }
-            .joystick-knob { width: 35px; height: 35px; }
+            .joystick-knob { width: calc(35px * var(--joy-scale)); height: calc(35px * var(--joy-scale)); }
             #btn-dash { width: 45px; height: 45px; right: 115px; bottom: 15px; font-size: 8px; }
             #btn-ult-mob { width: 45px; height: 45px; right: 75px; bottom: 95px; font-size: 8px; }
             
@@ -353,6 +357,12 @@
                 <div style="color: #00ffcc; font-size: 10px; margin-bottom: 15px;">VOLUME GERAL: <span id="vol-display">50%</span></div>
                 <button class="btn" style="padding: 8px 20px; margin-top:0;" onclick="game.changeVolume(-0.1)">-</button>
                 <button class="btn" style="padding: 8px 20px; margin-top:0;" onclick="game.changeVolume(0.1)">+</button>
+            </div>
+
+            <!-- NOVO: Configuração do tamanho do analógico para Mobile -->
+            <div id="joystick-settings" style="margin: 15px 0; padding: 15px; border: 2px solid #555; border-radius: 8px; background: rgba(0,0,0,0.5); display: none;">
+                <div style="color: #00ffcc; font-size: 10px; margin-bottom: 15px;">TAMANHO DO ANALÓGICO: <span id="joy-size-display">100%</span></div>
+                <input type="range" id="joy-size-slider" min="0.6" max="1.6" step="0.1" value="1.0" oninput="game.changeJoystickSize(this.value); sfx.play('talk');" style="width: 80%;">
             </div>
 
             <button class="btn" onclick="sfx.play('pickup'); game.resumeGame()">Voltar a Sofrer</button>
@@ -623,6 +633,7 @@ const game = {
     
     preview: { scene: null, camera: null, renderer: null, model: null, active: false, isDragging: false, previousX: 0 },
     dialogueTimeout: null, cameraShake: 0, 
+    joystickScale: 1.0,
     
     pStats: { 
         hp: 100, maxHp: 100, speed: 20, damage: 10, lastFire: 0, fireRate: 500, type: 'rapid',
@@ -761,8 +772,13 @@ const game = {
 
     setupMobileControls() {
         this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        if(!this.isMobile) return;
+        const joySettings = document.getElementById('joystick-settings');
+        if(!this.isMobile) {
+            if(joySettings) joySettings.style.display = 'none';
+            return;
+        }
         
+        if(joySettings) joySettings.style.display = 'block';
         document.getElementById('crosshair').style.display = 'none';
         
         const setupJoystick = (zoneId, stateObj) => {
@@ -834,6 +850,15 @@ const game = {
         knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
         stateObj.x = dx / maxR;
         stateObj.y = dy / maxR;
+    },
+
+    changeJoystickSize(val) {
+        this.joystickScale = parseFloat(val);
+        document.documentElement.style.setProperty('--joy-scale', this.joystickScale);
+        const display = document.getElementById('joy-size-display');
+        if(display) display.innerText = Math.round(this.joystickScale * 100) + '%';
+        const slider = document.getElementById('joy-size-slider');
+        if(slider && slider.value != this.joystickScale) slider.value = this.joystickScale;
     },
 
     formatTime(seconds) {
@@ -1001,7 +1026,8 @@ const game = {
                 maxHp: this.pStats.maxHp, speed: this.pStats.speed, damage: this.pStats.damage, 
                 fireRate: this.pStats.fireRate, type: this.pStats.type, levels: this.pStats.levels, hasUltimate: this.pStats.hasUltimate 
             },
-            dashMax: this.dash.maxCooldown
+            dashMax: this.dash.maxCooldown,
+            joyScale: this.joystickScale || 1.0
         };
         
         if (this.db && this.userId && this.fsDoc && this.fsSetDoc) {
@@ -1053,6 +1079,9 @@ const game = {
             };
             this.pStats.hp = this.pStats.maxHp;
             if(data.dashMax) this.dash.maxCooldown = data.dashMax;
+            this.joystickScale = data.joyScale || 1.0;
+            this.changeJoystickSize(this.joystickScale);
+            
             this.startLoading();
         } else {
             this.showDialogue("Capitão Fiasco", "Nenhum progresso encontrado. Pare de chorar e comece do zero.", 3000);
@@ -1113,6 +1142,8 @@ const game = {
             this.pStats.type = this.selectedChar.abilities[this.selectedAbilityIdx].type;
             this.pStats.maxHp = this.selectedChar.stats.hp;
             this.pStats.hp = this.pStats.maxHp;
+            
+            this.changeJoystickSize(this.joystickScale); // Garante que a escala é aplicada se for um jogo novo
         }
         document.getElementById('loading-quote').innerText = `"${QUOTES[Math.floor(Math.random() * QUOTES.length)]}"`;
         this.switchScreen('screen-loading');
@@ -1472,8 +1503,8 @@ const game = {
                 const wGeo = new THREE.BoxGeometry(2.5, 0.4, 0.4);
                 const wL = new THREE.Mesh(wGeo, activeChestMat); wL.position.set(-1.8, 3.5, -0.8); wL.rotation.set(0, 0.3, 0.5); group.add(wL); partsToFlash.push(wL);
                 const wR = new THREE.Mesh(wGeo, activeChestMat); wR.position.set(1.8, 3.5, -0.8); wR.rotation.set(0, -0.3, -0.5); group.add(wR); partsToFlash.push(wR);
-                const pL = new THREE.Mesh(padGeo, activeChestMat); pL.position.set(-0.1, 0.1, 0); pL.rotation.z = 0.2; pL.castShadow = true; armL.add(pL); partsToFlash.push(pL);
-                const pR = new THREE.Mesh(padGeo, activeChestMat); pR.position.set(0.1, 0.1, 0); pR.rotation.z = -0.2; pR.castShadow = true; armR.add(pR); partsToFlash.push(pR);
+                const pL = new Mesh(padGeo, activeChestMat); pL.position.set(-0.1, 0.1, 0); pL.rotation.z = 0.2; pL.castShadow = true; armL.add(pL); partsToFlash.push(pL);
+                const pR = new Mesh(padGeo, activeChestMat); pR.position.set(0.1, 0.1, 0); pR.rotation.z = -0.2; pR.castShadow = true; armR.add(pR); partsToFlash.push(pR);
             }
         }
 
@@ -2553,6 +2584,7 @@ const game = {
             }
         }
 
+        // CORREÇÃO RODA: Seguir exatamente a posição do jogador
         if(this.orbitGroup) {
             this.orbitGroup.position.copy(this.playerObj.position);
             this.orbitGroup.position.y = 1;
@@ -2589,6 +2621,7 @@ const game = {
             }
         }
 
+        // CORREÇÃO NUKE: Opacidade suave e sem "cegar" a câmera
         if (this.nukeEffect) {
             this.nukeEffect.timer -= dt;
             if (this.nukeEffect.mesh) {
@@ -2700,6 +2733,7 @@ const game = {
             
             const distToPlayer = Math.hypot(t.position.x - this.playerObj.position.x, t.position.z - this.playerObj.position.z);
             
+            // Magnetismo das Lágrimas
             if (distToPlayer < 8.0) {
                 const dir = new THREE.Vector3().subVectors(this.playerObj.position, t.position).normalize();
                 t.position.x += dir.x * 25 * dt;
