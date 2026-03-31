@@ -55,7 +55,10 @@
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
         :root {
-            --joy-scale: 1; /* Escala global para os analógicos (Controlado pelo JS) */
+            --joy-l-scale: 1.0;
+            --joy-r-scale: 1.0;
+            --btn-scale: 1.0;
+            --btn-offset: 20px;
         }
 
         body, html {
@@ -192,17 +195,47 @@
             #mobile-controls, .ui-layer, #hud, #hud-center { display: none !important; }
         }
 
-        /* CONTROLOS MOBILE - NOVO LAYOUT (TWIN-STICK DINÂMICO) */
+        /* CONTROLOS MOBILE - FLUIDOS E ANTI-SOBREPOSIÇÃO */
         #mobile-controls { display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
-        .joystick-zone { position: absolute; bottom: 30px; width: calc(130px * var(--joy-scale)); height: calc(130px * var(--joy-scale)); background: rgba(0, 255, 204, 0.1); border: 2px solid rgba(0, 255, 204, 0.4); border-radius: 50%; pointer-events: auto; }
-        #joystick-move { left: 40px; }
-        #joystick-shoot { right: 40px; left: auto; border-color: rgba(231, 76, 60, 0.4); background: rgba(231, 76, 60, 0.1); }
-        #joystick-shoot .joystick-knob { background: rgba(231, 76, 60, 0.8); box-shadow: 0 0 10px #e74c3c; }
-        .joystick-knob { position: absolute; top: 50%; left: 50%; width: calc(40px * var(--joy-scale)); height: calc(40px * var(--joy-scale)); background: rgba(0, 255, 204, 0.8); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px #00ffcc;}
+        .joystick-zone { position: absolute; bottom: 15px; border-radius: 50%; pointer-events: auto; }
         
-        .action-btn { position: absolute; width: 60px; height: 60px; background: rgba(155, 89, 182, 0.5); border: 2px solid #9b59b6; border-radius: 50%; color: #fff; font-size: 10px; display: flex; justify-content: center; align-items: center; pointer-events: auto; text-shadow: 1px 1px 0 #000; }
-        #btn-dash { right: 190px; bottom: 30px; }
-        #btn-ult-mob { right: 150px; bottom: 100px; border-color: #ff00ff; background: rgba(255,0,255,0.5); display: none; }
+        #joystick-move { 
+            left: 15px; 
+            width: calc(130px * var(--joy-l-scale)); height: calc(130px * var(--joy-l-scale)); 
+            background: rgba(0, 255, 204, 0.1); border: 2px solid rgba(0, 255, 204, 0.4); 
+        }
+        #joystick-move .joystick-knob { 
+            width: calc(40px * var(--joy-l-scale)); height: calc(40px * var(--joy-l-scale)); 
+            background: rgba(0, 255, 204, 0.8); box-shadow: 0 0 10px #00ffcc;
+        }
+
+        #joystick-shoot { 
+            right: 15px; left: auto; 
+            width: calc(130px * var(--joy-r-scale)); height: calc(130px * var(--joy-r-scale)); 
+            border-color: rgba(231, 76, 60, 0.4); background: rgba(231, 76, 60, 0.1); 
+        }
+        #joystick-shoot .joystick-knob { 
+            width: calc(40px * var(--joy-r-scale)); height: calc(40px * var(--joy-r-scale)); 
+            background: rgba(231, 76, 60, 0.8); box-shadow: 0 0 10px #e74c3c; 
+        }
+        
+        .joystick-knob { position: absolute; top: 50%; left: 50%; border-radius: 50%; transform: translate(-50%, -50%); }
+        
+        .action-btn { position: absolute; border: 2px solid #9b59b6; border-radius: 50%; color: #fff; display: flex; justify-content: center; align-items: center; pointer-events: auto; text-shadow: 1px 1px 0 #000; }
+        
+        /* A magia matemática: o Dash afasta-se consoante o tamanho do analógico de tiro e do offset configurado! */
+        #btn-dash { 
+            background: rgba(155, 89, 182, 0.5);
+            width: calc(60px * var(--btn-scale)); height: calc(60px * var(--btn-scale)); font-size: calc(10px * var(--btn-scale));
+            right: calc(15px + (130px * var(--joy-r-scale)) + var(--btn-offset)); 
+            bottom: 15px; 
+        }
+        #btn-ult-mob { 
+            border-color: #ff00ff; background: rgba(255,0,255,0.5); display: none;
+            width: calc(60px * var(--btn-scale)); height: calc(60px * var(--btn-scale)); font-size: calc(10px * var(--btn-scale));
+            right: calc(15px + (130px * var(--joy-r-scale)) + var(--btn-offset) - (30px * var(--btn-scale))); 
+            bottom: calc(15px + (60px * var(--btn-scale)) + 15px); 
+        }
 
         /* --- OTIMIZAÇÕES EXTREMAS PARA MOBILE (Telas Pequenas em Paisagem) --- */
         @media (max-height: 500px), (max-width: 850px) {
@@ -227,19 +260,32 @@
             .skill-node { width: auto; padding: 8px; font-size: 8px; }
             .story-text { font-size: 9px; padding: 10px; min-height: 80px; margin: 5px; line-height: 1.6; }
             
-            .joystick-zone { width: calc(90px * var(--joy-scale)); height: calc(90px * var(--joy-scale)); bottom: 15px; }
-            #joystick-move { left: 15px; }
-            #joystick-shoot { right: 15px; left: auto; }
-            .joystick-knob { width: calc(35px * var(--joy-scale)); height: calc(35px * var(--joy-scale)); }
-            #btn-dash { width: 45px; height: 45px; right: 115px; bottom: 15px; font-size: 8px; }
-            #btn-ult-mob { width: 45px; height: 45px; right: 75px; bottom: 95px; font-size: 8px; }
+            /* Dimensões base reduzidas no mobile, mas ainda controláveis pelo slider! */
+            #joystick-move { width: calc(90px * var(--joy-l-scale)); height: calc(90px * var(--joy-l-scale)); }
+            #joystick-move .joystick-knob { width: calc(35px * var(--joy-l-scale)); height: calc(35px * var(--joy-l-scale)); }
             
-            /* Ajustes Finos HUD Mobile - Menos apertado */
+            #joystick-shoot { width: calc(90px * var(--joy-r-scale)); height: calc(90px * var(--joy-r-scale)); }
+            #joystick-shoot .joystick-knob { width: calc(35px * var(--joy-r-scale)); height: calc(35px * var(--joy-r-scale)); }
+            
+            #btn-dash { 
+                width: calc(45px * var(--btn-scale)); height: calc(45px * var(--btn-scale)); font-size: calc(8px * var(--btn-scale));
+                right: calc(15px + (90px * var(--joy-r-scale)) + var(--btn-offset)); 
+            }
+            #btn-ult-mob { 
+                width: calc(45px * var(--btn-scale)); height: calc(45px * var(--btn-scale)); font-size: calc(8px * var(--btn-scale));
+                right: calc(15px + (90px * var(--joy-r-scale)) + var(--btn-offset) - (22px * var(--btn-scale))); 
+                bottom: calc(15px + (45px * var(--btn-scale)) + 10px); 
+            }
+            
+            /* Ajustes Finos HUD Mobile */
             #hud .hud-bar { top: 5px; left: 5px; padding: 5px; transform: scale(0.85); transform-origin: top left; }
             #parts-counter { top: 5px; right: 5px; padding: 5px; transform: scale(0.85); transform-origin: top right; }
             #pause-btn { top: 5px; left: 50%; transform: translateX(-50%); width: 35px; height: 35px; font-size: 16px; border-width: 1px;}
             #ult-indicator { top: 50px; right: 5px; transform: scale(0.85); transform-origin: top right;}
             #ult-btn-ui { padding: 4px; font-size: 7px; border-width: 1px;}
+
+            #joystick-settings-container { flex-direction: row !important; gap: 10px !important; }
+            .joy-slider-box { width: 30% !important; margin: 0 !important; }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -281,7 +327,7 @@
                 <span style="color:#ffff00;">[ 1 ] [ 2 ] [ 3 ]</span> : Comprar itens na Loja Rápido<br>
                 <span style="color:#ffff00;">[ B ]</span> : Fechar a Loja imediatamente<br><br>
                 <b>MOBILE:</b><br>
-                <span style="color:#00ffcc;">[JOYSTICK AZUL]</span> : Andar<br>
+                <span style="color:#00ffcc;">[JOYSTICK AZUL]</span> : Andar (Analógico real!)<br>
                 <span style="color:#e74c3c;">[JOYSTICK VERMELHO]</span> : Arraste para mirar e atirar. Dê um toque para mira automática!<br>
             </div>
             <button class="btn" onclick="sfx.play('hit'); game.fakeRemap()" style="background: #552222; border-color: #ff4444; margin-top: 20px;">Alterar Controles</button>
@@ -353,21 +399,38 @@
             <h1 style="color: #00ffcc;">PROCRASTINAÇÃO ATIVADA</h1>
             <p style="color: #aaa; font-size: 12px; margin-bottom: 20px;">Adiando as responsabilidades e focando no vazio...</p>
             
-            <div style="margin: 15px 0; padding: 15px; border: 2px solid #555; border-radius: 8px; background: rgba(0,0,0,0.5);">
-                <div style="color: #00ffcc; font-size: 10px; margin-bottom: 15px;">VOLUME GERAL: <span id="vol-display">50%</span></div>
+            <div style="margin: 10px 0; padding: 10px; border: 2px solid #555; border-radius: 8px; background: rgba(0,0,0,0.5);">
+                <div style="color: #00ffcc; font-size: 10px; margin-bottom: 10px;">VOLUME GERAL: <span id="vol-display">50%</span></div>
                 <button class="btn" style="padding: 8px 20px; margin-top:0;" onclick="game.changeVolume(-0.1)">-</button>
                 <button class="btn" style="padding: 8px 20px; margin-top:0;" onclick="game.changeVolume(0.1)">+</button>
             </div>
 
-            <!-- NOVO: Configuração do tamanho do analógico para Mobile -->
-            <div id="joystick-settings" style="margin: 15px 0; padding: 15px; border: 2px solid #555; border-radius: 8px; background: rgba(0,0,0,0.5); display: none;">
-                <div style="color: #00ffcc; font-size: 10px; margin-bottom: 15px;">TAMANHO DO ANALÓGICO: <span id="joy-size-display">100%</span></div>
-                <input type="range" id="joy-size-slider" min="0.6" max="1.6" step="0.1" value="1.0" oninput="game.changeJoystickSize(this.value); sfx.play('talk');" style="width: 80%;">
+            <!-- Painel de Configuração Mobile 100% Integrado -->
+            <div id="joystick-settings" style="margin: 10px 0; padding: 15px; border: 2px solid #555; border-radius: 8px; background: rgba(0,0,0,0.5); display: none; width: 80%; max-width: 500px;">
+                <div style="color: #00ffcc; font-size: 10px; margin-bottom: 15px;">CONFIGURAR CONTROLOS MOBILE:</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;">
+                    <div>
+                        <div style="color: #3498db; font-size: 8px; margin-bottom: 5px;">MOVER (ESQ): <span id="joy-l-display">100%</span></div>
+                        <input type="range" id="joy-l-slider" min="0.6" max="1.8" step="0.1" value="1.0" oninput="game.changeControlSettings();" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="color: #e74c3c; font-size: 8px; margin-bottom: 5px;">MIRA (DIR): <span id="joy-r-display">100%</span></div>
+                        <input type="range" id="joy-r-slider" min="0.6" max="1.8" step="0.1" value="1.0" oninput="game.changeControlSettings();" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="color: #9b59b6; font-size: 8px; margin-bottom: 5px;">TAM. DASH: <span id="btn-size-display">100%</span></div>
+                        <input type="range" id="btn-size-slider" min="0.6" max="1.8" step="0.1" value="1.0" oninput="game.changeControlSettings();" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="color: #f1c40f; font-size: 8px; margin-bottom: 5px;">ESPAÇAMENTO: <span id="btn-pos-display">20px</span></div>
+                        <input type="range" id="btn-pos-slider" min="0" max="60" step="5" value="20" oninput="game.changeControlSettings();" style="width: 100%;">
+                    </div>
+                </div>
             </div>
 
-            <button class="btn" onclick="sfx.play('pickup'); game.resumeGame()">Voltar a Sofrer</button>
-            <button class="btn" onclick="sfx.play('pickup'); game.saveGame()" style="border-color: #3498db; color: #3498db; margin-top: 10px;">💾 Forçar Salvamento</button>
-            <button class="btn" onclick="sfx.play('hit'); game.saveAndQuit()" style="border-color: #e74c3c; color: #e74c3c; margin-top: 10px;">Salvar e Desistir da Vida</button>
+            <button class="btn" onclick="sfx.play('pickup'); game.resumeGame()" style="margin-top: 5px;">Voltar a Sofrer</button>
+            <button class="btn" onclick="sfx.play('pickup'); game.saveGame()" style="border-color: #3498db; color: #3498db; margin-top: 5px;">💾 Forçar Salvamento</button>
+            <button class="btn" onclick="sfx.play('hit'); game.saveAndQuit()" style="border-color: #e74c3c; color: #e74c3c; margin-top: 5px;">Salvar e Desistir da Vida</button>
         </div>
 
         <div id="screen-gameover" class="screen">
@@ -633,7 +696,8 @@ const game = {
     
     preview: { scene: null, camera: null, renderer: null, model: null, active: false, isDragging: false, previousX: 0 },
     dialogueTimeout: null, cameraShake: 0, 
-    joystickScale: 1.0,
+    
+    controlConfig: { joyLScale: 1.0, joyRScale: 1.0, btnScale: 1.0, btnOffset: 20 },
     
     pStats: { 
         hp: 100, maxHp: 100, speed: 20, damage: 10, lastFire: 0, fireRate: 500, type: 'rapid',
@@ -681,10 +745,9 @@ const game = {
         
         this.initPreview3D();
         
-        // Chamada assíncrona não bloqueante para iniciar a gravação
-        this.initFirebase();
-        // Inicia o render loop de imediato
-        requestAnimationFrame(() => this.loop());
+        this.initFirebase().then(() => {
+            requestAnimationFrame(() => this.loop());
+        });
 
         window.addEventListener('blur', () => { this.keys = {w:false, a:false, s:false, d:false, shift:false, r:false}; });
 
@@ -770,6 +833,48 @@ const game = {
         }
     },
 
+    changeControlSettings() {
+        this.controlConfig.joyLScale = parseFloat(document.getElementById('joy-l-slider').value);
+        this.controlConfig.joyRScale = parseFloat(document.getElementById('joy-r-slider').value);
+        this.controlConfig.btnScale = parseFloat(document.getElementById('btn-size-slider').value);
+        this.controlConfig.btnOffset = parseFloat(document.getElementById('btn-pos-slider').value);
+
+        document.documentElement.style.setProperty('--joy-l-scale', this.controlConfig.joyLScale);
+        document.documentElement.style.setProperty('--joy-r-scale', this.controlConfig.joyRScale);
+        document.documentElement.style.setProperty('--btn-scale', this.controlConfig.btnScale);
+        document.documentElement.style.setProperty('--btn-offset', this.controlConfig.btnOffset + 'px');
+
+        const dL = document.getElementById('joy-l-display'); if(dL) dL.innerText = Math.round(this.controlConfig.joyLScale * 100) + '%';
+        const dR = document.getElementById('joy-r-display'); if(dR) dR.innerText = Math.round(this.controlConfig.joyRScale * 100) + '%';
+        const dB = document.getElementById('btn-size-display'); if(dB) dB.innerText = Math.round(this.controlConfig.btnScale * 100) + '%';
+        const dP = document.getElementById('btn-pos-display'); if(dP) dP.innerText = this.controlConfig.btnOffset + 'px';
+        
+        sfx.play('talk');
+    },
+
+    applyControlSettings(config) {
+        if(config) {
+            this.controlConfig.joyLScale = config.joyLScale || 1.0;
+            this.controlConfig.joyRScale = config.joyRScale || 1.0;
+            this.controlConfig.btnScale = config.btnScale || 1.0;
+            this.controlConfig.btnOffset = config.btnOffset !== undefined ? config.btnOffset : 20;
+        }
+        document.documentElement.style.setProperty('--joy-l-scale', this.controlConfig.joyLScale);
+        document.documentElement.style.setProperty('--joy-r-scale', this.controlConfig.joyRScale);
+        document.documentElement.style.setProperty('--btn-scale', this.controlConfig.btnScale);
+        document.documentElement.style.setProperty('--btn-offset', this.controlConfig.btnOffset + 'px');
+
+        const sL = document.getElementById('joy-l-slider'); if(sL) sL.value = this.controlConfig.joyLScale;
+        const sR = document.getElementById('joy-r-slider'); if(sR) sR.value = this.controlConfig.joyRScale;
+        const sB = document.getElementById('btn-size-slider'); if(sB) sB.value = this.controlConfig.btnScale;
+        const sP = document.getElementById('btn-pos-slider'); if(sP) sP.value = this.controlConfig.btnOffset;
+
+        const dL = document.getElementById('joy-l-display'); if(dL) dL.innerText = Math.round(this.controlConfig.joyLScale * 100) + '%';
+        const dR = document.getElementById('joy-r-display'); if(dR) dR.innerText = Math.round(this.controlConfig.joyRScale * 100) + '%';
+        const dB = document.getElementById('btn-size-display'); if(dB) dB.innerText = Math.round(this.controlConfig.btnScale * 100) + '%';
+        const dP = document.getElementById('btn-pos-display'); if(dP) dP.innerText = this.controlConfig.btnOffset + 'px';
+    },
+
     setupMobileControls() {
         this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         const joySettings = document.getElementById('joystick-settings');
@@ -852,15 +957,6 @@ const game = {
         stateObj.y = dy / maxR;
     },
 
-    changeJoystickSize(val) {
-        this.joystickScale = parseFloat(val);
-        document.documentElement.style.setProperty('--joy-scale', this.joystickScale);
-        const display = document.getElementById('joy-size-display');
-        if(display) display.innerText = Math.round(this.joystickScale * 100) + '%';
-        const slider = document.getElementById('joy-size-slider');
-        if(slider && slider.value != this.joystickScale) slider.value = this.joystickScale;
-    },
-
     formatTime(seconds) {
         const m = Math.floor(Math.max(0, seconds) / 60);
         const s = Math.floor(Math.max(0, seconds) % 60);
@@ -916,7 +1012,6 @@ const game = {
         const container = document.getElementById('customize-preview');
         this.preview.scene = new THREE.Scene(); 
         
-        // CORREÇÃO PREVIEW MOBILE: Câmera puxada para trás e ligeiramente para cima para não cortar a testa do boneco
         this.preview.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
         this.preview.camera.position.set(0, 4.5, 16); 
         this.preview.camera.lookAt(0, 4.0, 0);
@@ -926,7 +1021,6 @@ const game = {
         this.preview.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
         const light = new THREE.DirectionalLight(0xffffff, 0.5); light.position.set(5, 10, 5); this.preview.scene.add(light);
 
-        // CONTROLO DE ROTAÇÃO MANUAL (Rato e Toque)
         const onDown = (e) => {
             this.preview.isDragging = true;
             this.preview.previousX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
@@ -935,7 +1029,7 @@ const game = {
             if (this.preview.isDragging && this.preview.model) {
                 const currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
                 const deltaX = currentX - this.preview.previousX;
-                this.preview.model.rotation.y += deltaX * 0.015; // Velocidade da rotação
+                this.preview.model.rotation.y += deltaX * 0.015; 
                 this.preview.previousX = currentX;
             }
         };
@@ -1027,7 +1121,7 @@ const game = {
                 fireRate: this.pStats.fireRate, type: this.pStats.type, levels: this.pStats.levels, hasUltimate: this.pStats.hasUltimate 
             },
             dashMax: this.dash.maxCooldown,
-            joyScale: this.joystickScale || 1.0
+            controlConfig: this.controlConfig
         };
         
         if (this.db && this.userId && this.fsDoc && this.fsSetDoc) {
@@ -1079,8 +1173,7 @@ const game = {
             };
             this.pStats.hp = this.pStats.maxHp;
             if(data.dashMax) this.dash.maxCooldown = data.dashMax;
-            this.joystickScale = data.joyScale || 1.0;
-            this.changeJoystickSize(this.joystickScale);
+            if(data.controlConfig) this.applyControlSettings(data.controlConfig);
             
             this.startLoading();
         } else {
@@ -1101,6 +1194,7 @@ const game = {
             this.switchScreen(null); 
             this.clock.getDelta(); 
             this.safeRequestPointerLock();
+            this.saveGame(); 
         } 
     },
     async saveAndQuit() { await this.saveGame(); location.reload(); },
@@ -1143,7 +1237,7 @@ const game = {
             this.pStats.maxHp = this.selectedChar.stats.hp;
             this.pStats.hp = this.pStats.maxHp;
             
-            this.changeJoystickSize(this.joystickScale); // Garante que a escala é aplicada se for um jogo novo
+            this.applyControlSettings(this.controlConfig);
         }
         document.getElementById('loading-quote').innerText = `"${QUOTES[Math.floor(Math.random() * QUOTES.length)]}"`;
         this.switchScreen('screen-loading');
@@ -1478,7 +1572,6 @@ const game = {
                 const pL = new THREE.Mesh(padGeo, activeChestMat); pL.position.set(-0.1, 0.1, 0); pL.rotation.z = 0.2; pL.castShadow = true; armL.add(pL); partsToFlash.push(pL);
                 const pR = new THREE.Mesh(padGeo, activeChestMat); pR.position.set(0.1, 0.1, 0); pR.rotation.z = -0.2; pR.castShadow = true; armR.add(pR); partsToFlash.push(pR);
             } else if (armorType === 1) {
-                // CORREÇÃO: Tiara da armadura de prata subida de Y=5.8 para Y=6.2 para não bugar com a testa
                 const tiara = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.3, 2.2), activeChestMat); tiara.position.y = 6.2; headGroup.add(tiara); partsToFlash.push(tiara);
                 const tiaraGem = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.3), new THREE.MeshStandardMaterial({color: 0x00ffcc, metalness: 0.8, roughness: 0.2}));
                 tiaraGem.position.set(0, 6.2, 1.15); headGroup.add(tiaraGem); partsToFlash.push(tiaraGem);
@@ -1503,8 +1596,8 @@ const game = {
                 const wGeo = new THREE.BoxGeometry(2.5, 0.4, 0.4);
                 const wL = new THREE.Mesh(wGeo, activeChestMat); wL.position.set(-1.8, 3.5, -0.8); wL.rotation.set(0, 0.3, 0.5); group.add(wL); partsToFlash.push(wL);
                 const wR = new THREE.Mesh(wGeo, activeChestMat); wR.position.set(1.8, 3.5, -0.8); wR.rotation.set(0, -0.3, -0.5); group.add(wR); partsToFlash.push(wR);
-                const pL = new Mesh(padGeo, activeChestMat); pL.position.set(-0.1, 0.1, 0); pL.rotation.z = 0.2; pL.castShadow = true; armL.add(pL); partsToFlash.push(pL);
-                const pR = new Mesh(padGeo, activeChestMat); pR.position.set(0.1, 0.1, 0); pR.rotation.z = -0.2; pR.castShadow = true; armR.add(pR); partsToFlash.push(pR);
+                const pL = new THREE.Mesh(padGeo, activeChestMat); pL.position.set(-0.1, 0.1, 0); pL.rotation.z = 0.2; pL.castShadow = true; armL.add(pL); partsToFlash.push(pL);
+                const pR = new THREE.Mesh(padGeo, activeChestMat); pR.position.set(0.1, 0.1, 0); pR.rotation.z = -0.2; pR.castShadow = true; armR.add(pR); partsToFlash.push(pR);
             }
         }
 
@@ -1878,266 +1971,6 @@ const game = {
         }
     },
 
-    spawnRoda() {
-        while(this.orbitGroup.children.length > 0) {
-            let child = this.orbitGroup.children[0];
-            this.orbitGroup.remove(child);
-            this.disposeObject(child);
-        }
-        if(!this.pStats.rodaActive || this.pStats.levels.roda === 0) return;
-        
-        const tearsCount = [3, 4, 5, 5, 6, 7, 8][Math.min(6, this.pStats.levels.roda - 1)];
-        const radius = 8; 
-        
-        for(let i=0; i<tearsCount; i++) {
-            const angle = (i / tearsCount) * Math.PI * 2;
-            const tear = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 4), new THREE.MeshBasicMaterial({ color: 0x00aaff }));
-            tear.position.set(Math.cos(angle)*radius, 0, Math.sin(angle)*radius);
-            tear.rotation.x = Math.PI/2;
-            tear.rotation.z = -angle; 
-            this.orbitGroup.add(tear);
-        }
-    },
-
-    spawnMarket() {
-        this.phase = 'SHOP_DROP';
-        document.getElementById('wave-text').innerText = "PAUSA DECEPCIONANTE";
-        document.getElementById('timer-text').innerText = "Loja das Lágrimas a chegar...";
-        this.enemies.forEach(e => { this.scene.remove(e); this.disposeObject(e); }); this.enemies = []; 
-
-        const group = new THREE.Group();
-        const mat = new THREE.MeshStandardMaterial({color: 0x00aaff, emissive: 0x002255}); 
-        const stall = new THREE.Mesh(new THREE.BoxGeometry(6, 5, 4), mat); stall.position.y = 2.5; stall.castShadow = true;
-        const sign = new THREE.Mesh(new THREE.BoxGeometry(7, 1.5, 0.5), new THREE.MeshBasicMaterial({color: 0xffffff})); sign.position.set(0, 6, 2);
-        
-        group.add(stall, sign); group.position.set(0, 40, -10); 
-        this.scene.add(group); this.marketObj = group;
-    },
-
-    openMarket() {
-        this.phase = 'SHOP';
-        this.timerSeconds = 60; 
-        document.getElementById('wave-text').innerText = "LOJA DAS LÁGRIMAS";
-        document.getElementById('lagrimas-pts').innerText = this.lagrimas;
-
-        if (!this.isMobile && document.pointerLockElement) {
-            document.exitPointerLock();
-        }
-
-        let isMaxedOut = Object.keys(UPGRADES_DEF).every(k => this.pStats.levels[k] >= 7);
-        const container = document.getElementById('shop-items-container');
-        container.innerHTML = "";
-        this.currentShopItems = []; 
-
-        if (isMaxedOut && !this.pStats.hasUltimate) {
-            this.currentShopItems.push({id: 'ULT', cost: 100});
-            const keyHint = this.isMobile ? '' : `<div style="color:#fff; font-size:10px; margin-bottom:5px; font-weight:bold;">[ 1 ]</div>`;
-            container.innerHTML = `
-                <div class="skill-node" style="border-color:#ff00ff; box-shadow: 0 0 20px #ff00ff;" onclick="game.buyUltimate()">
-                    ${keyHint}
-                    <span style="color:#ff00ff; font-size:12px; font-weight:bold;">PODER ESPECIAL:<br>O FRACASSO</span><br><br>
-                    Aperte ${this.isMobile ? 'o botão ULT' : '[R] (ou ULT)'} para o Vazio Existencial.<br><br>Custo: 100 💧
-                </div>
-            `;
-        } else if (!isMaxedOut) {
-            let available = Object.keys(UPGRADES_DEF).filter(k => this.pStats.levels[k] < 7);
-            const shuffled = available.sort(() => 0.5 - Math.random()).slice(0, 3);
-            
-            shuffled.forEach((id, index) => {
-                const u = UPGRADES_DEF[id];
-                const lvl = this.pStats.levels[id];
-                const cost = u.baseCost + (lvl * 15);
-                this.currentShopItems.push({id: id, cost: cost});
-                
-                const keyHint = this.isMobile ? '' : `<div style="color:#fff; font-size:10px; margin-bottom:5px; font-weight:bold;">[ ${index + 1} ]</div>`;
-                const node = document.createElement('div'); node.className = 'skill-node';
-                node.innerHTML = `
-                    ${keyHint}
-                    <span style="color:${u.color}">${u.name}</span><br>
-                    <div class="skill-lvl">Nível ${lvl}/7</div><br>
-                    ${u.desc}<br>Custo: ${cost} 💧`;
-                node.onclick = () => this.buySkill(id, cost);
-                container.appendChild(node);
-            });
-        } else {
-             container.innerHTML = `<div style="color:#aaa; font-size:12px; grid-column: 1 / -1;">Não há mais nada para melhorar. O Fracasso é Absoluto.</div>`;
-        }
-
-        document.getElementById('btn-close-shop').innerText = this.isMobile ? "Fechar Loja (Sem Reembolsos)" : "[ B ] Fechar Loja (Sem Reembolsos)";
-
-        this.switchScreen('screen-market');
-    },
-
-    buySkill(id, cost) {
-        if(this.lagrimas >= cost) {
-            sfx.play('pickup');
-            this.lagrimas -= cost; 
-            this.pStats.levels[id]++;
-            UPGRADES_DEF[id].action(this.pStats, this);
-            
-            if (id === 'roda') {
-                this.pStats.rodaActive = true;
-                this.pStats.rodaTimer = 3;
-                this.spawnRoda();
-            }
-            if (id === 'auto') {
-                this.pStats.autoShootTimer = 3;
-            }
-
-            this.saveGame();
-            this.openMarket(); 
-            this.updateHUD();
-        } else {
-            sfx.play('hit');
-            this.showDialogue("Capitão Fiasco", "Sem lágrimas suficientes! O capitalismo não perdoa.", 2000);
-        }
-    },
-
-    buyUltimate() {
-        if(this.lagrimas >= 100) {
-            sfx.play('pickup');
-            this.lagrimas -= 100;
-            this.pStats.hasUltimate = true;
-            this.saveGame();
-            this.openMarket();
-            this.updateHUD();
-        } else {
-            sfx.play('hit');
-            this.showDialogue("Capitão Fiasco", "Faltam lágrimas para comprar o Vazio Existencial!", 2000);
-        }
-    },
-
-    closeMarket() {
-        this.switchScreen(null);
-        if(this.marketObj) { this.scene.remove(this.marketObj); this.disposeObject(this.marketObj); this.marketObj = null; }
-        
-        this.wave++;
-        if (this.wave <= 5) {
-            this.phase = 'WAVE';
-            this.timerSeconds = 60;
-            this.miniBossSpawned = false;
-            this.safeRequestPointerLock();
-            this.showDialogue("Capitão Fiasco", `Iniciando Onda ${this.wave}/5`, 3000);
-            this.saveGame();
-        } else {
-            if (this.stage === 4) {
-                this.startStory('PRE_BOSS');
-            } else {
-                this.phase = 'BOSS';
-                this.startFinalBoss(); 
-                this.saveGame();
-            }
-        }
-    },
-
-    shoot() {
-        if(this.state !== 'PLAYING' || !this.playerObj) return;
-        const now = Date.now(); if(now - this.pStats.lastFire < this.pStats.fireRate) return;
-        
-        if(this.selectedChar.id === 'dono_1_0' && Math.random() < 0.20) {
-            this.pStats.lastFire = now; 
-            this.playerObj.userData.shootAnimTimer = 0.25;
-            this.playerObj.userData.shootAnimType = this.pStats.type;
-            return;
-        }
-
-        sfx.play('shoot');
-        this.pStats.lastFire = now; this.playerObj.userData.shootAnimTimer = 0.25;
-        this.playerObj.userData.shootAnimType = this.pStats.type;
-        
-        const dir = new THREE.Vector3().subVectors(this.aimPoint, this.playerObj.position).normalize(); dir.y = 0;
-
-        const createProj = (offset = 0) => {
-            let geo, mat, rotSpeed = {x:0, y:0, z:0};
-            const charId = this.selectedChar.id;
-            const pType = this.pStats.type;
-
-            if (charId === 'desiludido') {
-                if (pType === 'spread') { geo = new THREE.BoxGeometry(0.8, 0.2, 0.8); mat = new THREE.MeshStandardMaterial({color: 0x00ff00, emissive: 0x005500}); rotSpeed.y = 0.5; } 
-                else if (pType === 'heavy') { geo = new THREE.BoxGeometry(2, 2.5, 0.5); mat = new THREE.MeshStandardMaterial({color: 0xcc0000, emissive: 0x550000}); rotSpeed.x = 0.2; } 
-                else { geo = new THREE.ConeGeometry(0.3, 1, 8); geo.rotateX(Math.PI/2); mat = new THREE.MeshStandardMaterial({color: 0x00aaff, emissive: 0x0055aa}); } 
-            } else if (charId === 'dono_1_0') {
-                if (pType === 'rapid') { geo = new THREE.CylinderGeometry(0.6, 0.6, 0.1, 16); geo.rotateX(Math.PI/2); mat = new THREE.MeshStandardMaterial({color: 0xaaaaaa, metalness: 0.8, roughness: 0.2}); rotSpeed.z = 0.8; } 
-                else if (pType === 'spread') { geo = new THREE.SphereGeometry(0.4, 8, 8); mat = new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}); } 
-                else { geo = new THREE.BoxGeometry(1.8, 1.5, 1.8); mat = new THREE.MeshStandardMaterial({color: 0xff5500, emissive: 0xaa2200}); rotSpeed.x=0.1; rotSpeed.y=0.2; } 
-            } else if (charId === 'enferrujado') {
-                if (pType === 'short') { geo = new THREE.ConeGeometry(0.3, 1.5, 4); geo.rotateX(Math.PI/2); mat = new THREE.MeshStandardMaterial({color: 0x8d6e63, roughness: 1}); } 
-                else if (pType === 'spread') { geo = new THREE.TorusGeometry(0.5, 0.15, 4, 8); mat = new THREE.MeshStandardMaterial({color: 0xaaaaaa, metalness: 1}); rotSpeed.z = 0.5; } 
-                else { geo = new THREE.BoxGeometry(2, 1.5, 2); mat = new THREE.MeshStandardMaterial({color: 0x5d4037, roughness: 0.9}); rotSpeed.y = 0.1; } 
-            } else if (charId === 'walloser') {
-                if (pType === 'aoe') { geo = new THREE.BoxGeometry(1.5, 1.5, 1.5); mat = new THREE.MeshStandardMaterial({color: 0x888888}); rotSpeed.x=0.1; rotSpeed.y=0.1; } 
-                else if (pType === 'heavy') { geo = new THREE.CylinderGeometry(0.6, 0.6, 2, 16); geo.rotateX(Math.PI/2); mat = new THREE.MeshStandardMaterial({color: 0x00ff00, emissive: 0x005500}); } 
-                else { geo = new THREE.OctahedronGeometry(0.5); mat = new THREE.MeshStandardMaterial({color: 0xffff00, emissive: 0xaaaa00}); rotSpeed.x=0.5; rotSpeed.y=0.5; } 
-            } else {
-                geo = new THREE.BoxGeometry(0.5, 0.5, 1.5); mat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
-            }
-
-            const bullet = new THREE.Mesh(geo, mat);
-            bullet.position.copy(this.playerObj.position).add(new THREE.Vector3(0, 3, 0));
-            const finalDir = dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0), offset);
-            bullet.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), finalDir);
-            
-            bullet.userData = {dir: finalDir, speed: 55, damage: this.pStats.damage, isPlayer: true, life: 2, rotSpeed: rotSpeed, pType: this.pStats.type, trailColor: mat.color};
-            this.scene.add(bullet); this.bullets.push(bullet);
-        };
-        
-        const panicLevel = this.pStats.levels.panic || 0;
-        if(this.pStats.type === 'spread') { createProj(-0.15); createProj(0); createProj(0.15); } else { createProj(0); }
-        for(let p=1; p<=panicLevel; p++) { createProj(p * 0.1); createProj(-p * 0.1); }
-    },
-
-    bossShoot(pos, color) {
-        if(this.phase === 'BOSS_DEATH' || !this.playerObj) return;
-        const dir = new THREE.Vector3().subVectors(this.playerObj.position, pos).normalize(); dir.y = 0;
-        this.bossObj.userData.shootAnimTimer = 0.3; this.bossObj.userData.shootAnimType = 'aoe';
-        sfx.play('shoot');
-
-        for(let i=0; i<8; i++) {
-            const bullet = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: color }));
-            bullet.position.copy(pos); bullet.position.y = 2;
-            const finalDir = dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0), (i/8)*Math.PI*2);
-            bullet.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), finalDir);
-            bullet.userData = { dir: finalDir, speed: 15, damage: 20, isPlayer: false, life: 0 };
-            this.scene.add(bullet); this.bullets.push(bullet);
-        }
-    },
-
-    triggerUltimate() {
-        if(!this.playerObj) return;
-        sfx.play('explosion');
-        this.cameraShake = 1.5; 
-        
-        if(this.nukeEffect && this.nukeEffect.mesh) {
-            this.scene.remove(this.nukeEffect.mesh);
-            this.disposeObject(this.nukeEffect.mesh);
-        }
-
-        const nukeMesh = new THREE.Mesh(
-            new THREE.TorusGeometry(1, 0.5, 16, 64), 
-            new THREE.MeshBasicMaterial({color: 0xff5500, transparent: true, opacity: 1.0, side: THREE.DoubleSide, depthWrite: false})
-        );
-        nukeMesh.rotation.x = Math.PI / 2;
-        nukeMesh.position.copy(this.playerObj.position);
-        nukeMesh.position.y = 0.5;
-        this.scene.add(nukeMesh);
-        
-        this.nukeEffect = { mesh: nukeMesh, timer: 1.0 }; 
-        this.showDialogue("Capitão Fiasco", "BOMBA ATIVADA! LIMPANDO O CAOS!", 2000);
-
-        for(let i = this.enemies.length - 1; i >= 0; i--) {
-            const e = this.enemies[i];
-            if(e && e.position && e.position.distanceTo(this.playerObj.position) < 40) {
-                this.createExplosion(e.position, 0xffaa00, 15);
-                this.spawnTear(e.position, e.userData.isMiniBoss ? 15 : 1);
-                this.scene.remove(e); this.disposeObject(e); this.enemies.splice(i, 1);
-            }
-        }
-
-        if(this.bossActive && this.bossObj && this.bossObj.position && this.bossObj.position.distanceTo(this.playerObj.position) < 40) {
-            this.damageBoss(500 * this.stage); 
-        }
-    },
-
     takeDamage(amount) {
         if(this.state !== 'PLAYING') return;
         if(this.shield.active) return; 
@@ -2347,6 +2180,9 @@ const game = {
                 dx = this.jMove.x / (dist > 0.3 ? dist : 1);
                 dz = this.jMove.y / (dist > 0.3 ? dist : 1);
             }
+        } else if (!this.isMobile) {
+            let mag = Math.hypot(dx, dz);
+            if (mag > 0) { dx /= mag; dz /= mag; }
         }
 
         if (this.keys.shift && this.dash.cooldown === 0 && (dx !== 0 || dz !== 0)) {
@@ -2362,13 +2198,15 @@ const game = {
             currentSpeed *= 0.4; 
         }
 
-        const isWalking = (dx !== 0 || dz !== 0);
+        const isWalking = (Math.abs(dx) > 0.05 || Math.abs(dz) > 0.05);
         this.applyWalkingAnim(this.playerObj, this.dash.active ? 2 : 1, isWalking, dt);
 
         if(isWalking) {
-            const mag = Math.sqrt(dx*dx + dz*dz) || 1;
-            const moveX = (dx/mag) * currentSpeed * dt;
-            const moveZ = (dz/mag) * currentSpeed * dt;
+            const mag = Math.hypot(dx, dz) || 1;
+            let moveScale = this.isMobile ? (mag > 1 ? 1/mag : 1) : 1; 
+
+            const moveX = dx * moveScale * currentSpeed * dt;
+            const moveZ = dz * moveScale * currentSpeed * dt;
             
             if(!this.checkCollision(this.playerObj.position.x + moveX, this.playerObj.position.z)) this.playerObj.position.x += moveX;
             if(!this.checkCollision(this.playerObj.position.x, this.playerObj.position.z + moveZ)) this.playerObj.position.z += moveZ;
@@ -2430,14 +2268,12 @@ const game = {
             }
 
             if (targetAngle !== null) {
-                if (this.jShoot.active && this.isMobileAttacking) {
-                    this.playerObj.rotation.y = targetAngle;
-                } else {
-                    let diff = targetAngle - this.playerObj.rotation.y;
-                    while (diff < -Math.PI) diff += Math.PI * 2;
-                    while (diff > Math.PI) diff -= Math.PI * 2;
-                    this.playerObj.rotation.y += diff * 18 * dt; 
-                }
+                let diff = targetAngle - this.playerObj.rotation.y;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                
+                let rotSpeed = (this.jShoot.active && this.isMobileAttacking) ? 25 : 15;
+                this.playerObj.rotation.y += diff * rotSpeed * dt; 
             }
 
             this.aimPoint.set(
@@ -2584,7 +2420,6 @@ const game = {
             }
         }
 
-        // CORREÇÃO RODA: Seguir exatamente a posição do jogador
         if(this.orbitGroup) {
             this.orbitGroup.position.copy(this.playerObj.position);
             this.orbitGroup.position.y = 1;
@@ -2621,7 +2456,6 @@ const game = {
             }
         }
 
-        // CORREÇÃO NUKE: Opacidade suave e sem "cegar" a câmera
         if (this.nukeEffect) {
             this.nukeEffect.timer -= dt;
             if (this.nukeEffect.mesh) {
@@ -2733,7 +2567,6 @@ const game = {
             
             const distToPlayer = Math.hypot(t.position.x - this.playerObj.position.x, t.position.z - this.playerObj.position.z);
             
-            // Magnetismo das Lágrimas
             if (distToPlayer < 8.0) {
                 const dir = new THREE.Vector3().subVectors(this.playerObj.position, t.position).normalize();
                 t.position.x += dir.x * 25 * dt;
