@@ -166,7 +166,7 @@
         #ult-indicator { display: none; position: absolute; top: 20px; right: 80px; text-align: center; }
         #ult-btn-ui { border: 2px solid #ff00ff; background: rgba(20,0,30,0.8); color: #ff00ff; font-size: 10px; padding: 15px; border-radius: 5px; text-shadow: 1px 1px 0 #000;}
         #ult-bar-bg { width: 100px; height: 5px; background: #333; margin-top: 5px; margin-left: auto; margin-right: auto; }
-        #ult-bar-fill { width: 100%; height: 100%; background: #ff00ff; }
+        #ult-bar-fill { width: 100%; height: 100%; background: #ff00ff; transition: width 0.1s; }
 
         .skill-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px; max-width: 800px; margin-left: auto; margin-right: auto;}
         @media (max-width: 768px) { .skill-grid { grid-template-columns: 1fr; gap: 10px; padding-bottom: 30px;} .skill-node { width: 250px; } }
@@ -223,7 +223,7 @@
         
         .action-btn { position: absolute; border: 2px solid #9b59b6; border-radius: 50%; color: #fff; display: flex; justify-content: center; align-items: center; pointer-events: auto; text-shadow: 1px 1px 0 #000; }
         
-        /* A magia matemática: o Dash afasta-se consoante o tamanho do analógico de tiro e do offset configurado! */
+        /* A magia matemática do posicionamento dinâmico mobile! */
         #btn-dash { 
             background: rgba(155, 89, 182, 0.5);
             width: calc(60px * var(--btn-scale)); height: calc(60px * var(--btn-scale)); font-size: calc(10px * var(--btn-scale));
@@ -580,7 +580,6 @@ const QUOTES = [
     "Foco no objetivo (que é desistir logo)."
 ];
 
-// Tons de fundo mais claros para evitar que o ecrã fique demasiado escuro no telemóvel
 const STAGE_THEMES = [
     { 
         name: "Labirinto Corporativo", floor: 0x2a3a4c, fog: 0x1a252c, env: 'office',
@@ -1228,6 +1227,7 @@ const game = {
             if(abInput) this.selectedAbilityIdx = parseInt(abInput.value);
             this.pStats.levels = { hp: 0, dmg: 0, fireRate: 0, spd: 0, auto: 0, dash: 0, shield: 0, panic: 0, roda: 0 };
             this.pStats.hasUltimate = false;
+            this.ultimate.cooldown = 0;
             this.pStats.rodaTimer = 0;
             this.pStats.rodaActive = false;
             this.pStats.autoShootTimer = 0;
@@ -1325,7 +1325,7 @@ const game = {
         this.particles.forEach(p => { this.scene.remove(p); this.disposeObject(p); }); this.particles = [];
         
         if(this.marketObj) { this.scene.remove(this.marketObj); this.disposeObject(this.marketObj); this.marketObj = null; }
-        if(this.nukeEffect) { this.scene.remove(this.nukeEffect.mesh); this.disposeObject(this.nukeEffect.mesh); this.nukeEffect = null; }
+        if(this.nukeEffect && this.nukeEffect.mesh) { this.scene.remove(this.nukeEffect.mesh); this.disposeObject(this.nukeEffect.mesh); this.nukeEffect = null; }
         
         this.pStats.rodaTimer = 2;
         this.pStats.rodaActive = false;
@@ -1935,6 +1935,230 @@ const game = {
         this.scene.remove(crate); this.disposeObject(crate); this.crates.splice(index, 1);
     },
 
+    spawnRoda() {
+        while(this.orbitGroup.children.length > 0) {
+            let child = this.orbitGroup.children[0];
+            this.orbitGroup.remove(child);
+            this.disposeObject(child);
+        }
+        if(!this.pStats.rodaActive || this.pStats.levels.roda === 0) return;
+        
+        const tearsCount = [3, 4, 5, 5, 6, 7, 8][Math.min(6, this.pStats.levels.roda - 1)];
+        const radius = 8; 
+        
+        for(let i=0; i<tearsCount; i++) {
+            const angle = (i / tearsCount) * Math.PI * 2;
+            const tear = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 4), new THREE.MeshBasicMaterial({ color: 0x00aaff }));
+            tear.position.set(Math.cos(angle)*radius, 0, Math.sin(angle)*radius);
+            tear.rotation.x = Math.PI/2;
+            tear.rotation.z = -angle; 
+            this.orbitGroup.add(tear);
+        }
+    },
+
+    spawnMarket() {
+        this.phase = 'SHOP_DROP';
+        document.getElementById('wave-text').innerText = "PAUSA DECEPCIONANTE";
+        document.getElementById('timer-text').innerText = "Loja das Lágrimas a chegar...";
+        this.enemies.forEach(e => { this.scene.remove(e); this.disposeObject(e); }); this.enemies = []; 
+
+        const group = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({color: 0x00aaff, emissive: 0x002255}); 
+        const stall = new THREE.Mesh(new THREE.BoxGeometry(6, 5, 4), mat); stall.position.y = 2.5; stall.castShadow = true;
+        const sign = new THREE.Mesh(new THREE.BoxGeometry(7, 1.5, 0.5), new THREE.MeshBasicMaterial({color: 0xffffff})); sign.position.set(0, 6, 2);
+        
+        group.add(stall, sign); group.position.set(0, 40, -10); 
+        this.scene.add(group); this.marketObj = group;
+    },
+
+    openMarket() {
+        this.phase = 'SHOP';
+        this.timerSeconds = 60; 
+        document.getElementById('wave-text').innerText = "LOJA DAS LÁGRIMAS";
+        document.getElementById('lagrimas-pts').innerText = this.lagrimas;
+
+        if (!this.isMobile && document.pointerLockElement) {
+            document.exitPointerLock();
+        }
+
+        let isMaxedOut = Object.keys(UPGRADES_DEF).every(k => this.pStats.levels[k] >= 7);
+        const container = document.getElementById('shop-items-container');
+        container.innerHTML = "";
+        this.currentShopItems = []; 
+
+        if (isMaxedOut && !this.pStats.hasUltimate) {
+            this.currentShopItems.push({id: 'ULT', cost: 100});
+            const keyHint = this.isMobile ? '' : `<div style="color:#fff; font-size:10px; margin-bottom:5px; font-weight:bold;">[ 1 ]</div>`;
+            container.innerHTML = `
+                <div class="skill-node" style="border-color:#ff00ff; box-shadow: 0 0 20px #ff00ff;" onclick="game.buyUltimate()">
+                    ${keyHint}
+                    <span style="color:#ff00ff; font-size:12px; font-weight:bold;">PODER ESPECIAL:<br>O FRACASSO</span><br><br>
+                    Aperte ${this.isMobile ? 'o botão ULT' : '[R] (ou ULT)'} para o Vazio Existencial.<br><br>Custo: 100 💧
+                </div>
+            `;
+        } else if (!isMaxedOut) {
+            let available = Object.keys(UPGRADES_DEF).filter(k => this.pStats.levels[k] < 7);
+            const shuffled = available.sort(() => 0.5 - Math.random()).slice(0, 3);
+            
+            shuffled.forEach((id, index) => {
+                const u = UPGRADES_DEF[id];
+                const lvl = this.pStats.levels[id];
+                const cost = u.baseCost + (lvl * 15);
+                this.currentShopItems.push({id: id, cost: cost});
+                
+                const keyHint = this.isMobile ? '' : `<div style="color:#fff; font-size:10px; margin-bottom:5px; font-weight:bold;">[ ${index + 1} ]</div>`;
+                const node = document.createElement('div'); node.className = 'skill-node';
+                node.innerHTML = `
+                    ${keyHint}
+                    <span style="color:${u.color}">${u.name}</span><br>
+                    <div class="skill-lvl">Nível ${lvl}/7</div><br>
+                    ${u.desc}<br>Custo: ${cost} 💧`;
+                node.onclick = () => this.buySkill(id, cost);
+                container.appendChild(node);
+            });
+        } else {
+             container.innerHTML = `<div style="color:#aaa; font-size:12px; grid-column: 1 / -1;">Não há mais nada para melhorar. O Fracasso é Absoluto.</div>`;
+        }
+
+        document.getElementById('btn-close-shop').innerText = this.isMobile ? "Fechar Loja (Sem Reembolsos)" : "[ B ] Fechar Loja (Sem Reembolsos)";
+
+        this.switchScreen('screen-market');
+    },
+
+    buySkill(id, cost) {
+        if(this.lagrimas >= cost) {
+            sfx.play('pickup');
+            this.lagrimas -= cost; 
+            this.pStats.levels[id]++;
+            UPGRADES_DEF[id].action(this.pStats, this);
+            
+            if (id === 'roda') {
+                this.pStats.rodaActive = true;
+                this.pStats.rodaTimer = 3;
+                this.spawnRoda();
+            }
+            if (id === 'auto') {
+                this.pStats.autoShootTimer = 3;
+            }
+
+            this.saveGame();
+            this.openMarket(); 
+            this.updateHUD();
+        } else {
+            sfx.play('hit');
+            this.showDialogue("Capitão Fiasco", "Sem lágrimas suficientes! O capitalismo não perdoa.", 2000);
+        }
+    },
+
+    buyUltimate() {
+        if(this.lagrimas >= 100) {
+            sfx.play('pickup');
+            this.lagrimas -= 100;
+            this.pStats.hasUltimate = true;
+            this.saveGame();
+            this.openMarket();
+            this.updateHUD();
+        } else {
+            sfx.play('hit');
+            this.showDialogue("Capitão Fiasco", "Faltam lágrimas para comprar o Vazio Existencial!", 2000);
+        }
+    },
+
+    closeMarket() {
+        this.switchScreen(null);
+        if(this.marketObj) { this.scene.remove(this.marketObj); this.disposeObject(this.marketObj); this.marketObj = null; }
+        
+        this.wave++;
+        if (this.wave <= 5) {
+            this.phase = 'WAVE';
+            this.timerSeconds = 60;
+            this.miniBossSpawned = false;
+            this.safeRequestPointerLock();
+            this.showDialogue("Capitão Fiasco", `Iniciando Onda ${this.wave}/5`, 3000);
+            this.saveGame();
+        } else {
+            if (this.stage === 4) {
+                this.startStory('PRE_BOSS');
+            } else {
+                this.phase = 'BOSS';
+                this.startFinalBoss(); 
+                this.saveGame();
+            }
+        }
+    },
+
+    shoot() {
+        if(this.state !== 'PLAYING' || !this.playerObj) return;
+        const now = Date.now(); if(now - this.pStats.lastFire < this.pStats.fireRate) return;
+        
+        if(this.selectedChar.id === 'dono_1_0' && Math.random() < 0.20) {
+            this.pStats.lastFire = now; 
+            this.playerObj.userData.shootAnimTimer = 0.25;
+            this.playerObj.userData.shootAnimType = this.pStats.type;
+            return;
+        }
+
+        sfx.play('shoot');
+        this.pStats.lastFire = now; this.playerObj.userData.shootAnimTimer = 0.25;
+        this.playerObj.userData.shootAnimType = this.pStats.type;
+        
+        const dir = new THREE.Vector3().subVectors(this.aimPoint, this.playerObj.position).normalize(); dir.y = 0;
+
+        const createProj = (offset = 0) => {
+            let geo, mat, rotSpeed = {x:0, y:0, z:0};
+            const charId = this.selectedChar.id;
+            const pType = this.pStats.type;
+
+            if (charId === 'desiludido') {
+                if (pType === 'spread') { geo = new THREE.BoxGeometry(0.8, 0.2, 0.8); mat = new THREE.MeshStandardMaterial({color: 0x00ff00, emissive: 0x005500}); rotSpeed.y = 0.5; } 
+                else if (pType === 'heavy') { geo = new THREE.BoxGeometry(2, 2.5, 0.5); mat = new THREE.MeshStandardMaterial({color: 0xcc0000, emissive: 0x550000}); rotSpeed.x = 0.2; } 
+                else { geo = new THREE.ConeGeometry(0.3, 1, 8); geo.rotateX(Math.PI/2); mat = new THREE.MeshStandardMaterial({color: 0x00aaff, emissive: 0x0055aa}); } 
+            } else if (charId === 'dono_1_0') {
+                if (pType === 'rapid') { geo = new THREE.CylinderGeometry(0.6, 0.6, 0.1, 16); geo.rotateX(Math.PI/2); mat = new THREE.MeshStandardMaterial({color: 0xaaaaaa, metalness: 0.8, roughness: 0.2}); rotSpeed.z = 0.8; } 
+                else if (pType === 'spread') { geo = new THREE.SphereGeometry(0.4, 8, 8); mat = new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}); } 
+                else { geo = new THREE.BoxGeometry(1.8, 1.5, 1.8); mat = new THREE.MeshStandardMaterial({color: 0xff5500, emissive: 0xaa2200}); rotSpeed.x=0.1; rotSpeed.y=0.2; } 
+            } else if (charId === 'enferrujado') {
+                if (pType === 'short') { geo = new THREE.ConeGeometry(0.3, 1.5, 4); geo.rotateX(Math.PI/2); mat = new THREE.MeshStandardMaterial({color: 0x8d6e63, roughness: 1}); } 
+                else if (pType === 'spread') { geo = new THREE.TorusGeometry(0.5, 0.15, 4, 8); mat = new THREE.MeshStandardMaterial({color: 0xaaaaaa, metalness: 1}); rotSpeed.z = 0.5; } 
+                else { geo = new THREE.BoxGeometry(2, 1.5, 2); mat = new THREE.MeshStandardMaterial({color: 0x5d4037, roughness: 0.9}); rotSpeed.y = 0.1; } 
+            } else if (charId === 'walloser') {
+                if (pType === 'aoe') { geo = new THREE.BoxGeometry(1.5, 1.5, 1.5); mat = new THREE.MeshStandardMaterial({color: 0x888888}); rotSpeed.x=0.1; rotSpeed.y=0.1; } 
+                else if (pType === 'heavy') { geo = new THREE.CylinderGeometry(0.6, 0.6, 2, 16); geo.rotateX(Math.PI/2); mat = new THREE.MeshStandardMaterial({color: 0x00ff00, emissive: 0x005500}); } 
+                else { geo = new THREE.OctahedronGeometry(0.5); mat = new THREE.MeshStandardMaterial({color: 0xffff00, emissive: 0xaaaa00}); rotSpeed.x=0.5; rotSpeed.y=0.5; } 
+            } else {
+                geo = new THREE.BoxGeometry(0.5, 0.5, 1.5); mat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
+            }
+
+            const bullet = new THREE.Mesh(geo, mat);
+            bullet.position.copy(this.playerObj.position).add(new THREE.Vector3(0, 3, 0));
+            const finalDir = dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0), offset);
+            bullet.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), finalDir);
+            
+            bullet.userData = {dir: finalDir, speed: 55, damage: this.pStats.damage, isPlayer: true, life: 2, rotSpeed: rotSpeed, pType: this.pStats.type, trailColor: mat.color};
+            this.scene.add(bullet); this.bullets.push(bullet);
+        };
+        
+        const panicLevel = this.pStats.levels.panic || 0;
+        if(this.pStats.type === 'spread') { createProj(-0.15); createProj(0); createProj(0.15); } else { createProj(0); }
+        for(let p=1; p<=panicLevel; p++) { createProj(p * 0.1); createProj(-p * 0.1); }
+    },
+
+    bossShoot(pos, color) {
+        if(this.phase === 'BOSS_DEATH' || !this.playerObj) return;
+        const dir = new THREE.Vector3().subVectors(this.playerObj.position, pos).normalize(); dir.y = 0;
+        this.bossObj.userData.shootAnimTimer = 0.3; this.bossObj.userData.shootAnimType = 'aoe';
+        sfx.play('shoot');
+
+        for(let i=0; i<8; i++) {
+            const bullet = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: color }));
+            bullet.position.copy(pos); bullet.position.y = 2;
+            const finalDir = dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0), (i/8)*Math.PI*2);
+            bullet.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), finalDir);
+            bullet.userData = { dir: finalDir, speed: 15, damage: 20, isPlayer: false, life: 0 };
+            this.scene.add(bullet); this.bullets.push(bullet);
+        }
+    },
+
     triggerNuke() {
         if(!this.playerObj) return;
         sfx.play('explosion');
@@ -1968,6 +2192,42 @@ const game = {
 
         if(this.bossActive && this.bossObj && this.bossObj.position && this.bossObj.position.distanceTo(this.playerObj.position) < 40) {
             this.damageBoss(500 * this.stage); 
+        }
+    },
+
+    triggerUltimate() {
+        if(!this.playerObj) return;
+        sfx.play('explosion');
+        this.cameraShake = 1.5; 
+        
+        if(this.nukeEffect && this.nukeEffect.mesh) {
+            this.scene.remove(this.nukeEffect.mesh);
+            this.disposeObject(this.nukeEffect.mesh);
+        }
+
+        const nukeMesh = new THREE.Mesh(
+            new THREE.TorusGeometry(1, 0.5, 16, 64), 
+            new THREE.MeshBasicMaterial({color: 0xff00ff, transparent: true, opacity: 1.0, side: THREE.DoubleSide, depthWrite: false})
+        );
+        nukeMesh.rotation.x = Math.PI / 2;
+        nukeMesh.position.copy(this.playerObj.position);
+        nukeMesh.position.y = 0.5;
+        this.scene.add(nukeMesh);
+        
+        this.nukeEffect = { mesh: nukeMesh, timer: 1.0 }; 
+        this.showDialogue("Capitão Fiasco", "VAZIO EXISTENCIAL LIBERADO!", 2000);
+
+        for(let i = this.enemies.length - 1; i >= 0; i--) {
+            const e = this.enemies[i];
+            if(e && e.position && e.position.distanceTo(this.playerObj.position) < 40) {
+                this.createExplosion(e.position, 0xff00ff, 15);
+                this.spawnTear(e.position, e.userData.isMiniBoss ? 15 : 1);
+                this.scene.remove(e); this.disposeObject(e); this.enemies.splice(i, 1);
+            }
+        }
+
+        if(this.bossActive && this.bossObj && this.bossObj.position && this.bossObj.position.distanceTo(this.playerObj.position) < 40) {
+            this.damageBoss(800 * this.stage); 
         }
     },
 
@@ -2167,9 +2427,42 @@ const game = {
             }
         }
 
-        if (this.dash.cooldown > 0) { this.dash.cooldown -= dt; if(this.dash.cooldown < 0) this.dash.cooldown = 0; }
-        if (this.dash.active) { this.dash.timer -= dt; if (this.dash.timer <= 0) this.dash.active = false; }
-        document.getElementById('dash-bar-fill').style.width = (this.dash.cooldown === 0 ? 100 : ((this.dash.maxCooldown - this.dash.cooldown) / this.dash.maxCooldown) * 100) + '%';
+        // --- GESTÃO DINÂMICA DO DASH (COM INVULNERABILIDADE) ---
+        if (this.dash.cooldown > 0) { 
+            this.dash.cooldown -= dt; 
+            if(this.dash.cooldown < 0) this.dash.cooldown = 0; 
+        }
+        if (this.dash.active) { 
+            this.dash.timer -= dt; 
+            if (this.dash.timer <= 0) this.dash.active = false; 
+        }
+        const dashBar = document.getElementById('dash-bar-fill');
+        if(dashBar) dashBar.style.width = (this.dash.cooldown === 0 ? 100 : ((this.dash.maxCooldown - this.dash.cooldown) / this.dash.maxCooldown) * 100) + '%';
+
+        // --- GESTÃO DO PODER ESPECIAL (ULTIMATE) - CORREÇÃO CRÍTICA APLICADA ---
+        if (this.pStats.hasUltimate) {
+            if (this.ultimate.cooldown > 0) {
+                this.ultimate.cooldown -= dt;
+                if (this.ultimate.cooldown < 0) this.ultimate.cooldown = 0;
+            }
+            
+            // Atualização visual do UI do Ultimate em tempo real
+            let uPct = this.ultimate.cooldown === 0 ? 100 : ((this.ultimate.maxCooldown - this.ultimate.cooldown) / this.ultimate.maxCooldown) * 100;
+            const ultFill = document.getElementById('ult-bar-fill');
+            if (ultFill) ultFill.style.width = uPct + '%';
+            
+            const ultBtnUI = document.getElementById('ult-btn-ui');
+            if (ultBtnUI) {
+                ultBtnUI.style.borderColor = this.ultimate.cooldown === 0 ? '#ff00ff' : '#555';
+                ultBtnUI.style.color = this.ultimate.cooldown === 0 ? '#ff00ff' : '#555';
+            }
+
+            // O gatilho principal da explosão!
+            if (this.keys.r && this.ultimate.cooldown === 0) {
+                this.triggerUltimate();
+                this.ultimate.cooldown = this.ultimate.maxCooldown;
+            }
+        }
 
         let dx = 0, dz = 0;
         if(this.keys.w) dz -= 1; if(this.keys.s) dz += 1; if(this.keys.a) dx -= 1; if(this.keys.d) dx += 1;
@@ -2177,8 +2470,8 @@ const game = {
         if(this.isMobile && this.jMove.active) {
             let dist = Math.hypot(this.jMove.x, this.jMove.y);
             if(dist > 0.05) {
-                dx = this.jMove.x / (dist > 0.3 ? dist : 1);
-                dz = this.jMove.y / (dist > 0.3 ? dist : 1);
+                dx = this.jMove.x;
+                dz = this.jMove.y;
             }
         } else if (!this.isMobile) {
             let mag = Math.hypot(dx, dz);
@@ -2242,16 +2535,16 @@ const game = {
                 
                 this.isMobileAttacking = true;
 
-                if (dist > 0.2) {
+                if (dist > 0.15) { 
                     targetAngle = Math.atan2(sdx, sdy);
-                } else {
-                    let target = null, minDist = 30;
+                } else { 
+                    let target = null, minDist = 40;
                     this.enemies.forEach(e => {
                         let d = this.playerObj.position.distanceTo(e.position);
                         if (d < minDist) { minDist = d; target = e; }
                     });
                     
-                    if (this.bossActive && this.bossObj && this.playerObj.position.distanceTo(this.bossObj.position) < 45) {
+                    if (this.bossActive && this.bossObj && this.playerObj.position.distanceTo(this.bossObj.position) < 50) {
                         target = this.bossObj;
                     }
 
@@ -2282,7 +2575,9 @@ const game = {
                 this.playerObj.position.z + Math.cos(this.playerObj.rotation.y) * 10
             );
 
-            if (this.isMobileAttacking) this.shoot();
+            if (this.isMobileAttacking) {
+                this.shoot();
+            }
         } else {
             this.raycaster.setFromCamera(this.mouse, this.camera);
             const intersects = this.raycaster.intersectObject(this.mousePlane);
@@ -2347,6 +2642,9 @@ const game = {
             e.rotation.y = Math.atan2(dir.x, dir.z);
             e.position.y = 2 + (isEnemyWalking ? Math.abs(Math.sin(Date.now()*0.015)) * 0.3 : 0); 
             if(e.userData.isMiniBoss) e.position.y += 1; 
+            
+            if (e.userData.rodaHitTimer > 0) e.userData.rodaHitTimer -= dt;
+
             this.applyWalkingAnim(e, 1, isEnemyWalking, dt);
         }
 
@@ -2355,6 +2653,9 @@ const game = {
             this.bossObj.position.addScaledVector(dir, 5 * dt);
             this.bossObj.rotation.y = Math.atan2(dir.x, dir.z);
             this.bossObj.position.y = 6 + Math.abs(Math.sin(Date.now()*0.01)) * 0.5;
+
+            if (this.bossObj.userData.rodaHitTimer > 0) this.bossObj.userData.rodaHitTimer -= dt;
+
             this.applyWalkingAnim(this.bossObj, 0.5, true, dt);
 
             if(Date.now() - this.bossObj.userData.lastFire > 1500) {
@@ -2522,15 +2823,32 @@ const game = {
                             const distXZ = Math.hypot(b.position.x - e.position.x, b.position.z - e.position.z);
                             if (distXZ < hitRangeXZ) {
                                 sfx.play('hit');
-                                e.userData.hp -= b.userData.damage; 
+                                
+                                // NOVA LÓGICA DE DANO EM ÁREA (EXPLOSÃO REAL)
+                                if (b.userData.pType === 'aoe') {
+                                    this.createExplosion(e.position, 0xff5500, 8);
+                                    for(let k = this.enemies.length - 1; k >= 0; k--) {
+                                        const eAoE = this.enemies[k];
+                                        if (eAoE && eAoE.position && eAoE.position.distanceTo(e.position) < 5) {
+                                            eAoE.userData.hp -= b.userData.damage;
+                                            this.flashCharacter(eAoE, 0xffffff);
+                                            if(eAoE.userData.hp <= 0) { 
+                                                this.spawnTear(eAoE.position, eAoE.userData.isMiniBoss ? 15 : 1); 
+                                                this.scene.remove(eAoE); this.disposeObject(eAoE); this.enemies.splice(k, 1);
+                                            }
+                                        }
+                                    }
+                                } else { // Dano Normal / Heavy
+                                    e.userData.hp -= b.userData.damage; 
+                                    this.flashCharacter(e, 0xffffff);
+                                    if(e.userData.hp <= 0) { 
+                                        this.spawnTear(e.position, e.userData.isMiniBoss ? 15 : 1); 
+                                        this.scene.remove(e); 
+                                        this.disposeObject(e); 
+                                        this.enemies.splice(j, 1);
+                                    } 
+                                }
                                 hit = true; 
-                                this.flashCharacter(e, 0xffffff);
-                                if(e.userData.hp <= 0) { 
-                                    this.spawnTear(e.position, e.userData.isMiniBoss ? 15 : 1); 
-                                    this.scene.remove(e); 
-                                    this.disposeObject(e); 
-                                    this.enemies.splice(j, 1);
-                                } 
                                 break;
                             }
                         }
@@ -2588,10 +2906,6 @@ const game = {
     },
     nextStage() { this.parts++; this.stage++; if(this.stage > 4) this.switchScreen('screen-win'); else this.startLevelPhase(); },
     gameOver() { this.switchScreen('screen-gameover'); },
-    checkSave() {}, 
-    async saveAndQuit() { await this.saveGame(); location.reload(); }, 
-    pauseGame() { this.state = 'PAUSED'; this.switchScreen('screen-pause'); }, 
-    resumeGame() { this.state = 'PLAYING'; this.switchScreen(null); },
     
     completeStage() {
         this.lagrimas += 50; 
