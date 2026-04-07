@@ -1210,7 +1210,8 @@ const game = {
 
     startLoading() {
         this.state = 'LOADING';
-        if(!this.isLoadedGame) {
+        // CORREÇÃO CRÍTICA: Só aplica o "Reset de Fábrica" se for o início absoluto do jogo (Fase 1, 0 Peças)!
+        if(!this.isLoadedGame && this.stage === 1 && this.parts === 0) {
             const abInput = document.querySelector('input[name="ability"]:checked');
             if(abInput) this.selectedAbilityIdx = parseInt(abInput.value);
             this.pStats.levels = { hp: 0, dmg: 0, fireRate: 0, spd: 0, auto: 0, dash: 0, shield: 0, panic: 0, roda: 0 };
@@ -1230,7 +1231,7 @@ const game = {
         document.getElementById('loading-quote').innerText = `"${QUOTES[Math.floor(Math.random() * QUOTES.length)]}"`;
         this.switchScreen('screen-loading');
         setTimeout(() => {
-            if(this.stage === 1 && !this.isLoadedGame) this.startStory('PROLOGUE');
+            if(this.stage === 1 && !this.isLoadedGame && this.parts === 0) this.startStory('PROLOGUE');
             else this.startStory('CHAR_INTRO');
         }, 3000);
     },
