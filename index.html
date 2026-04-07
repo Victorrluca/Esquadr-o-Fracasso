@@ -1316,9 +1316,16 @@ const game = {
         if(this.marketObj) { this.scene.remove(this.marketObj); this.disposeObject(this.marketObj); this.marketObj = null; }
         if(this.nukeEffect && this.nukeEffect.mesh) { this.scene.remove(this.nukeEffect.mesh); this.disposeObject(this.nukeEffect.mesh); this.nukeEffect = null; }
         
+        // CORREÇÃO CRÍTICA DE PRESERVAÇÃO DE UPGRADES NA TRANSIÇÃO DE FASE
         this.pStats.rodaTimer = 2;
-        this.pStats.rodaActive = false;
+        this.pStats.rodaActive = (this.pStats.levels && this.pStats.levels.roda > 0);
         this.crateTimer = 0;
+        
+        // Reinicia o estado visual do Escudo para garantir que ele se ergue na nova fase
+        this.shield.active = false;
+        this.shield.cooldown = 2; // Dá 2 segundos de respiro antes do escudo ativar
+        if (this.shield.mesh) this.shield.mesh.visible = false;
+        
         this.spawnRoda();
 
         if (this.loadedWave) {
