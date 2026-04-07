@@ -434,16 +434,22 @@
         </div>
 
         <div id="screen-gameover" class="screen">
-            <h1 style="color: #e74c3c; border-color: #e74c3c;">SUCESSO INACEITÁVEL</h1>
-            <p style="color: #fff; font-size: 12px;">Que vergonha... O RH notou o teu esforço e deu-te uma promoção.</p>
-            <p style="color: #aaa; font-size: 10px; margin-top: 10px; margin-bottom: 20px;">[ CHECKPOINT DA FASE CARREGADO ]</p>
-            <button class="btn" style="border-color: #e74c3c; color: #e74c3c;" onclick="sfx.play('pickup'); game.loadGame()">Voltar no Tempo e Fracassar Direito</button>
+            <h1 style="color: #e74c3c; border-color: #e74c3c;">AVALIAÇÃO DE DESEMPENHO: PÉSSIMA</h1>
+            <p style="color: #fff; font-size: 12px;">Morrer no horário de expediente é uma infração grave.</p>
+            
+            <div style="border: 2px dashed #ff4444; padding: 15px; background: rgba(50,0,0,0.6); margin: 15px; border-radius: 8px;">
+                <p style="color: #ffaa00; font-size: 10px; margin-bottom: 10px;">[ RELATÓRIO DE CONFISCO DO RH ]</p>
+                <p id="punishment-text" style="color: #ff4444; font-size: 14px; font-weight: bold; white-space: pre-line; margin: 0;"></p>
+            </div>
+            
+            <p style="color: #aaa; font-size: 10px; margin-top: 10px; margin-bottom: 20px;">Assine a advertência abaixo para reencarnar.</p>
+            <button class="btn" style="border-color: #e74c3c; color: #e74c3c;" onclick="sfx.play('pickup'); game.loadGame()">Aceitar Humilhação e Voltar</button>
         </div>
 
         <div id="screen-win" class="screen">
             <h1 style="color: #00ffcc;">FRACASSO EXECUTADO COM SUCESSO</h1>
             <p style="color: #fff; font-size: 12px;">O Robô explodiu. Simulação completa.</p>
-            <button class="btn" onclick="location.reload()">Sair do Sistema</button>
+            <button class="btn" onclick="game.resetAndQuit()">Sair do Sistema e Limpar Save</button>
         </div>
     </div>
 
@@ -1179,24 +1185,6 @@ const game = {
             this.showDialogue("Capitão Fiasco", "Nenhum progresso encontrado. Pare de chorar e comece do zero.", 3000);
         }
     },
-
-    pauseGame() { 
-        if(this.state === 'PLAYING' && this.phase !== 'SHOP') { 
-            this.state = 'PAUSED'; 
-            this.switchScreen('screen-pause'); 
-            if (!this.isMobile && document.pointerLockElement) document.exitPointerLock();
-        } 
-    },
-    resumeGame() { 
-        if(this.state === 'PAUSED') { 
-            this.state = 'PLAYING'; 
-            this.switchScreen(null); 
-            this.clock.getDelta(); 
-            this.safeRequestPointerLock();
-            this.saveGame(); 
-        } 
-    },
-    async saveAndQuit() { await this.saveGame(); location.reload(); },
 
     changeVolume(delta) {
         sfx.globalVolume = Math.max(0, Math.min(1, sfx.globalVolume + delta));
@@ -2143,19 +2131,58 @@ const game = {
         for(let p=1; p<=panicLevel; p++) { createProj(p * 0.1); createProj(-p * 0.1); }
     },
 
-    bossShoot(pos, color) {
+    bossShoot(pos, color, count = 8) {
         if(this.phase === 'BOSS_DEATH' || !this.playerObj) return;
         const dir = new THREE.Vector3().subVectors(this.playerObj.position, pos).normalize(); dir.y = 0;
         this.bossObj.userData.shootAnimTimer = 0.3; this.bossObj.userData.shootAnimType = 'aoe';
         sfx.play('shoot');
 
-        for(let i=0; i<8; i++) {
+        for(let i=0; i<count; i++) {
             const bullet = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: color }));
             bullet.position.copy(pos); bullet.position.y = 2;
-            const finalDir = dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0), (i/8)*Math.PI*2);
+            const finalDir = dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0), (i/count)*Math.PI*2);
             bullet.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), finalDir);
-            bullet.userData = { dir: finalDir, speed: 15, damage: 20, isPlayer: false, life: 0 };
+            bullet.userData = { dir: finalDir, speed: 15, damage: 20 + (this.stage * 5), isPlayer: false, life: 0 };
             this.scene.add(bullet); this.bullets.push(bullet);
+        }
+    },
+
+    bossSummonMinions(pos) {
+        if(this.phase === 'BOSS_DEATH' || !this.playerObj) return;
+
+        // PREVENÇÃO DE CRASH: Limite de minions no ecrã para o Boss não derreter o CPU!
+        const maxMinions = this.isFinalBoss ? 20 : 10;
+        const currentEnemies = this.enemies.length;
+        if (currentEnemies >= maxMinions) return;
+
+        sfx.play('alert');
+        this.showDialogue("Capitão Fiasco", "O CHEFE CHAMOU REFORÇOS!", 3000);
+        
+        const numMinions = this.isFinalBoss ? 4 : 2;
+        const theme = STAGE_THEMES[Math.min(this.stage - 1, 3)];
+        
+        for(let i=0; i<numMinions; i++) {
+            const eData = theme.enemies[Math.floor(Math.random() * theme.enemies.length)];
+            const enemy = this.createVoxelCharacter(eData.c, true, 0, 'enemy'); 
+            
+            const angle = (i / numMinions) * Math.PI * 2;
+            const dist = 15;
+            enemy.position.set(pos.x + Math.cos(angle)*dist, 2, pos.z + Math.sin(angle)*dist);
+            
+            const waveScale = 1 + (this.wave * 0.2);
+            let baseHp = 40 * this.stage;
+            if (this.stage === 1) baseHp = 20; 
+            const finalHp = baseHp * waveScale * 0.7; // Lacaios invocados são ligeiramente mais fracos
+            
+            Object.assign(enemy.userData, { 
+                hp: finalHp, speed: 5 + this.wave, maxHp: finalHp, damage: 10 + (this.stage*5),
+                isRanged: eData.ranged || false,
+                rangedColor: eData.c
+            });
+            
+            this.createExplosion(enemy.position, 0x00ffcc, 8);
+            this.scene.add(enemy); 
+            this.enemies.push(enemy);
         }
     },
 
@@ -2231,6 +2258,74 @@ const game = {
         }
     },
 
+    punishPlayer() {
+        let upgradableSkills = Object.keys(this.pStats.levels).filter(k => this.pStats.levels[k] > 0);
+        let lostSkillsMsg = "";
+
+        if (upgradableSkills.length > 0) {
+            // Perde 1 ou 2 níveis de habilidades ao calhas!
+            let numToLose = Math.min(upgradableSkills.length, Math.floor(Math.random() * 2) + 1); 
+
+            for(let i=0; i<numToLose; i++) {
+                upgradableSkills = Object.keys(this.pStats.levels).filter(k => this.pStats.levels[k] > 0);
+                if(upgradableSkills.length === 0) break;
+
+                let randomSkill = upgradableSkills[Math.floor(Math.random() * upgradableSkills.length)];
+                this.pStats.levels[randomSkill]--;
+                lostSkillsMsg += `🔻 -1 Nível de ${UPGRADES_DEF[randomSkill].name}\n`;
+            }
+
+            this.recalculateStats();
+        } else {
+            // Se não tiver habilidades, rouba-lhe o dinheiro (Lágrimas)
+            if (this.lagrimas > 0) {
+                let lostTears = Math.min(this.lagrimas, 50);
+                this.lagrimas -= lostTears;
+                lostSkillsMsg += `💸 Multa Rescisória: -${lostTears} Lágrimas\n`;
+            } else {
+                lostSkillsMsg += `🤡 Já não tens NADA para perder. Patético.\n`;
+            }
+        }
+        return lostSkillsMsg.trim();
+    },
+
+    recalculateStats() {
+        // Recalcula todos os atributos matematicamente para evitar bugs de vida infinita
+        const char = this.selectedChar;
+        const ability = char.abilities[this.selectedAbilityIdx];
+
+        this.pStats.damage = char.stats.damage * ability.dmgMod;
+        this.pStats.fireRate = char.stats.fireRate * ability.fireMod;
+        this.pStats.speed = char.stats.speed;
+        this.pStats.maxHp = char.stats.hp;
+        this.dash.maxCooldown = 1.5;
+
+        for (const [key, level] of Object.entries(this.pStats.levels)) {
+            for (let i = 0; i < level; i++) {
+                if (key === 'hp') {
+                    this.pStats.maxHp += 25; 
+                } else if (key === 'dash') {
+                    this.dash.maxCooldown = Math.max(0.4, this.dash.maxCooldown * 0.85);
+                } else {
+                    UPGRADES_DEF[key].action(this.pStats, this);
+                }
+            }
+        }
+
+        if (this.pStats.hp > this.pStats.maxHp) this.pStats.hp = this.pStats.maxHp;
+        
+        if (this.pStats.levels.roda === 0) {
+            this.pStats.rodaActive = false;
+            while(this.orbitGroup.children.length > 0) {
+                let child = this.orbitGroup.children[0];
+                this.orbitGroup.remove(child);
+                this.disposeObject(child);
+            }
+        } else if (this.pStats.rodaActive) {
+            this.spawnRoda();
+        }
+    },
+
     takeDamage(amount) {
         if(this.state !== 'PLAYING') return;
         if(this.shield.active) return; 
@@ -2241,6 +2336,14 @@ const game = {
         this.pStats.hp -= amount; this.updateHUD(); this.flashCharacter(this.playerObj, 0xff0000);
         if(this.pStats.hp <= 0) {
             if(!this.isMobile && document.pointerLockElement) document.exitPointerLock();
+            
+            // PUNIÇÃO EXECUTADA COM SUCESSO E HUMILHAÇÃO VISUAL!
+            const penaltyMsg = this.punishPlayer();
+            document.getElementById('punishment-text').innerText = penaltyMsg;
+            
+            // O Capitão Fiasco esfrega a falha na cara dele
+            this.showDialogue("Capitão Fiasco", "Inaceitável! O RH acaba de confiscar os teus bens. Lê o relatório da tua falha no ecrã!", 5000);
+
             this.state = 'GAMEOVER'; 
             this.switchScreen('screen-gameover');
             this.saveGame(); 
@@ -2272,6 +2375,7 @@ const game = {
         this.showDialogue("Capitão Fiasco", `CHEFE DETECTADO: ${bData.name.toUpperCase()}`, 4000);
 
         this.bossObj.userData.lastFire = 0;
+        this.bossObj.userData.lastSummon = Date.now() + 3000; // Tempo inicial para o primeiro summon
         if (!document.pointerLockElement) {
             this.safeRequestPointerLock();
         }
@@ -2439,14 +2543,13 @@ const game = {
         const dashBar = document.getElementById('dash-bar-fill');
         if(dashBar) dashBar.style.width = (this.dash.cooldown === 0 ? 100 : ((this.dash.maxCooldown - this.dash.cooldown) / this.dash.maxCooldown) * 100) + '%';
 
-        // --- GESTÃO DO PODER ESPECIAL (ULTIMATE) - CORREÇÃO CRÍTICA APLICADA ---
+        // --- GESTÃO DO PODER ESPECIAL (ULTIMATE) ---
         if (this.pStats.hasUltimate) {
             if (this.ultimate.cooldown > 0) {
                 this.ultimate.cooldown -= dt;
                 if (this.ultimate.cooldown < 0) this.ultimate.cooldown = 0;
             }
             
-            // Atualização visual do UI do Ultimate em tempo real
             let uPct = this.ultimate.cooldown === 0 ? 100 : ((this.ultimate.maxCooldown - this.ultimate.cooldown) / this.ultimate.maxCooldown) * 100;
             const ultFill = document.getElementById('ult-bar-fill');
             if (ultFill) ultFill.style.width = uPct + '%';
@@ -2457,7 +2560,6 @@ const game = {
                 ultBtnUI.style.color = this.ultimate.cooldown === 0 ? '#ff00ff' : '#555';
             }
 
-            // O gatilho principal da explosão!
             if (this.keys.r && this.ultimate.cooldown === 0) {
                 this.triggerUltimate();
                 this.ultimate.cooldown = this.ultimate.maxCooldown;
@@ -2501,6 +2603,7 @@ const game = {
             const moveX = dx * moveScale * currentSpeed * dt;
             const moveZ = dz * moveScale * currentSpeed * dt;
             
+            // Lógica Deslizante nas Paredes
             if(!this.checkCollision(this.playerObj.position.x + moveX, this.playerObj.position.z)) this.playerObj.position.x += moveX;
             if(!this.checkCollision(this.playerObj.position.x, this.playerObj.position.z + moveZ)) this.playerObj.position.z += moveZ;
 
@@ -2600,7 +2703,9 @@ const game = {
             }
             if (this.timerSeconds <= 0) {
                 if (this.bossObj) { sfx.play('explosion'); this.createExplosion(this.bossObj.position, 0xffffff, 50); this.spawnTear(this.bossObj.position, 30); this.scene.remove(this.bossObj); this.disposeObject(this.bossObj); this.bossObj = null; }
-                this.bossActive = false; this.completeStage();
+                this.bossActive = false; 
+                this.phase = 'TRANSITION';
+                this.completeStage();
             }
             this.renderer.render(this.scene, this.camera); return; 
         }
@@ -2658,9 +2763,19 @@ const game = {
 
             this.applyWalkingAnim(this.bossObj, 0.5, true, dt);
 
-            if(Date.now() - this.bossObj.userData.lastFire > 1500) {
-                this.bossShoot(this.bossObj.position, 0xffaa00);
+            // Boss dispara balas
+            let fireDelay = this.isFinalBoss ? 1000 : 1500;
+            if(Date.now() - this.bossObj.userData.lastFire > fireDelay) {
+                this.bossShoot(this.bossObj.position, this.isFinalBoss ? 0xff00ff : 0xffaa00, this.isFinalBoss ? 12 : 8);
                 this.bossObj.userData.lastFire = Date.now();
+            }
+
+            // LÓGICA DE INVOCAÇÃO (SUMMON) DE MINIONS
+            let summonDelay = this.isFinalBoss ? 6000 : 10000;
+            if(!this.bossObj.userData.lastSummon) this.bossObj.userData.lastSummon = Date.now() + 3000; // Começa a invocar após 3s
+            if(Date.now() - this.bossObj.userData.lastSummon > summonDelay) {
+                this.bossSummonMinions(this.bossObj.position);
+                this.bossObj.userData.lastSummon = Date.now();
             }
 
             if(this.bossObj.position.distanceTo(this.playerObj.position) < 6) {
@@ -2778,7 +2893,7 @@ const game = {
             p.position.addScaledVector(p.userData.dir, p.userData.speed * dt); 
             p.scale.multiplyScalar(0.9); 
             p.userData.life -= dt; 
-            if(p.userData.life <= 0) { 
+            if(p.userData.life <= 0 || Math.abs(p.position.x) > 60 || Math.abs(p.position.z) > 60) { 
                 this.scene.remove(p); 
                 this.disposeObject(p); 
                 this.particles.splice(i, 1); 
@@ -2824,7 +2939,7 @@ const game = {
                             if (distXZ < hitRangeXZ) {
                                 sfx.play('hit');
                                 
-                                // NOVA LÓGICA DE DANO EM ÁREA (EXPLOSÃO REAL)
+                                // LÓGICA DE DANO EM ÁREA (EXPLOSÃO REAL)
                                 if (b.userData.pType === 'aoe') {
                                     this.createExplosion(e.position, 0xff5500, 8);
                                     for(let k = this.enemies.length - 1; k >= 0; k--) {
@@ -2904,13 +3019,50 @@ const game = {
 
         this.renderer.render(this.scene, this.camera);
     },
+    
     nextStage() { this.parts++; this.stage++; if(this.stage > 4) this.switchScreen('screen-win'); else this.startLevelPhase(); },
+    
     gameOver() { this.switchScreen('screen-gameover'); },
+    
+    async resetAndQuit() {
+        localStorage.removeItem('constelacao_save');
+        if (this.db && this.userId && this.fsDoc && this.fsSetDoc) {
+            try {
+                const docRef = this.fsDoc(this.db, 'artifacts', this.appId, 'users', this.userId, 'saves', 'game_save');
+                await this.fsSetDoc(docRef, {}); 
+            } catch(e) {}
+        }
+        location.reload();
+    },
+
+    async saveAndQuit() { await this.saveGame(); location.reload(); }, 
+    
+    pauseGame() { 
+        if(this.state === 'PLAYING' && this.phase !== 'SHOP') { 
+            this.state = 'PAUSED'; 
+            this.switchScreen('screen-pause'); 
+            if (!this.isMobile && document.pointerLockElement) document.exitPointerLock();
+        } 
+    }, 
+    
+    resumeGame() { 
+        if(this.state === 'PAUSED') { 
+            this.state = 'PLAYING'; 
+            this.switchScreen(null); 
+            this.clock.getDelta(); 
+            this.safeRequestPointerLock();
+            this.saveGame(); 
+        } 
+    },
     
     completeStage() {
         this.lagrimas += 50; 
         this.parts++; this.updateHUD();
+
+        // LIMPEZA TOTAL DA ARENA PARA EVITAR DANO NA TRANSIÇÃO!
         this.enemies.forEach(e => { this.scene.remove(e); this.disposeObject(e); }); this.enemies = [];
+        this.bullets.forEach(b => { this.scene.remove(b); this.disposeObject(b); }); this.bullets = [];
+        this.crates.forEach(c => { this.scene.remove(c); this.disposeObject(c); }); this.crates = [];
 
         if(this.parts >= 4) {
             if(!this.isMobile && document.pointerLockElement) document.exitPointerLock();
