@@ -1210,7 +1210,6 @@ const game = {
 
     startLoading() {
         this.state = 'LOADING';
-        // CORREÇÃO CRÍTICA: Só aplica o "Reset de Fábrica" se for o início absoluto do jogo (Fase 1, 0 Peças)!
         if(!this.isLoadedGame && this.stage === 1 && this.parts === 0) {
             const abInput = document.querySelector('input[name="ability"]:checked');
             if(abInput) this.selectedAbilityIdx = parseInt(abInput.value);
@@ -1316,14 +1315,12 @@ const game = {
         if(this.marketObj) { this.scene.remove(this.marketObj); this.disposeObject(this.marketObj); this.marketObj = null; }
         if(this.nukeEffect && this.nukeEffect.mesh) { this.scene.remove(this.nukeEffect.mesh); this.disposeObject(this.nukeEffect.mesh); this.nukeEffect = null; }
         
-        // CORREÇÃO CRÍTICA DE PRESERVAÇÃO DE UPGRADES NA TRANSIÇÃO DE FASE
         this.pStats.rodaTimer = 2;
         this.pStats.rodaActive = (this.pStats.levels && this.pStats.levels.roda > 0);
         this.crateTimer = 0;
         
-        // Reinicia o estado visual do Escudo para garantir que ele se ergue na nova fase
         this.shield.active = false;
-        this.shield.cooldown = 2; // Dá 2 segundos de respiro antes do escudo ativar
+        this.shield.cooldown = 2;
         if (this.shield.mesh) this.shield.mesh.visible = false;
         
         this.spawnRoda();
@@ -1364,21 +1361,38 @@ const game = {
         const group = new THREE.Group();
         let matColor = colorHex, darkColor = 0x111111;
         let isSuitEnemy = false;
+        let isJunkyardEnemy = false;
+        let isStudioEnemy = false;
+        let isServerEnemy = false;
 
-        if(isEnemy) {
+        if(isEnemy && charId !== 'boss') {
             if(this.stage === 1) { matColor = 0x222222; darkColor = 0x111111; isSuitEnemy = true; } 
-            else if(this.stage === 2) { matColor = 0xcd6133; darkColor = 0x5c4033; } 
-            else if(this.stage === 3) { matColor = 0xff1493; darkColor = 0x00ffff; } 
-            else if(this.stage === 4) { matColor = 0x00ff00; darkColor = 0x000000; } 
+            else if(this.stage === 2) { matColor = 0x6d4c41; darkColor = 0x4e342e; isJunkyardEnemy = true; } 
+            else if(this.stage === 3) { matColor = 0xff1493; darkColor = 0x111111; isStudioEnemy = true; } 
+            else if(this.stage === 4) { matColor = 0x0a0a0a; darkColor = 0x00ff00; isServerEnemy = true; } 
         }
 
         const armorMat = new THREE.MeshStandardMaterial({color: matColor, metalness: isEnemy ? 0.2 : 0.7, roughness: isEnemy ? 0.9 : 0.3});
         const silverMat = new THREE.MeshStandardMaterial({color: matColor, metalness: 0.95, roughness: 0.05}); 
         const divineGold = new THREE.MeshStandardMaterial({color: matColor, metalness: 0.8, roughness: 0.2, emissive: matColor, emissiveIntensity: 0.25}); 
         
-        const skinMat = new THREE.MeshStandardMaterial({color: isSuitEnemy ? 0xffccaa : 0xffdcb3, roughness: 0.8}); 
+        let sColor = 0xffdcb3;
+        if (isSuitEnemy) sColor = 0xffccaa;
+        else if (isJunkyardEnemy) sColor = 0x8bc34a; // Mutante verde
+        else if (isStudioEnemy) sColor = 0xe0ac69; // Bronzeado falso
+        else if (isServerEnemy) sColor = 0xcccccc; // Pele pálida de PC
+        
+        let hColor = 0x3a2311;
+        if (isEnemy && charId !== 'boss') {
+            if (isSuitEnemy) hColor = 0x111111;
+            else if (isJunkyardEnemy) hColor = 0x550000;
+            else if (isStudioEnemy) hColor = 0x00ffff; // Cabelo pintado de ciano
+            else if (isServerEnemy) hColor = 0x00ff00; // Fios de fibra ótica
+        }
+
+        const skinMat = new THREE.MeshStandardMaterial({color: isSuitEnemy ? 0xffccaa : (isJunkyardEnemy ? 0x8bc34a : sColor), roughness: 0.8}); 
         const darkMat = new THREE.MeshStandardMaterial({color: darkColor, roughness: 0.9});
-        const hairMat = new THREE.MeshStandardMaterial({color: isEnemy ? (isSuitEnemy ? 0x111111 : 0x550000) : 0x3a2311, roughness: 0.9}); 
+        const hairMat = new THREE.MeshStandardMaterial({color: isEnemy ? (isSuitEnemy ? 0x111111 : hColor) : 0x3a2311, roughness: 0.9}); 
         const beltMat = new THREE.MeshStandardMaterial({color: 0x332211, roughness: 0.8}); 
         const gloveMat = new THREE.MeshStandardMaterial({color: 0x222222, roughness: 0.7}); 
 
@@ -1452,7 +1466,7 @@ const game = {
         headGroup.add(hairGroup); 
 
         let eyesArr = [];
-        if (!isEnemy || isSuitEnemy) {
+        if (!isEnemy || isSuitEnemy || isJunkyardEnemy) {
             const whiteMat = new THREE.MeshBasicMaterial({color: 0xffffff}); 
             const blackMat = new THREE.MeshBasicMaterial({color: 0x000000});
             const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.05), whiteMat); eyeL.position.set(-0.4, 5.2, 1.01);
@@ -1480,7 +1494,7 @@ const game = {
                     tearR.position.set(0.4, 4.95, 1.02);
                     headGroup.add(tearL, tearR);
                 }
-            } else if (isSuitEnemy) {
+            } else if (isSuitEnemy || isJunkyardEnemy || isStudioEnemy || isServerEnemy) {
                 eyebrowL.rotation.z = -0.2; eyebrowL.position.y = 5.42; 
                 eyebrowR.rotation.z = 0.2; eyebrowR.position.y = 5.42;
             }
@@ -1510,9 +1524,17 @@ const game = {
 
             headGroup.add(eyeL, pupilL, eyeR, pupilR);
         } else {
-            const glowMat = new THREE.MeshBasicMaterial({color: 0xff0000});
+            const glowMat = new THREE.MeshBasicMaterial({color: charId === 'boss' ? 0xffffff : 0xff0000});
             const visor = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.4, 0.2), glowMat); visor.position.set(0, 5.2, 1); headGroup.add(visor);
             partsToFlash.push(visor);
+            
+            if(charId === 'boss') {
+                const hornMat = new THREE.MeshStandardMaterial({color: 0xffaa00, metalness: 0.8});
+                const crown = new THREE.Mesh(new THREE.TorusGeometry(1, 0.2, 8, 5), hornMat);
+                crown.rotation.x = Math.PI/2;
+                crown.position.y = 6.5;
+                headGroup.add(crown); partsToFlash.push(crown);
+            }
         }
 
         const bodyUnder = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.8, 0.8), darkMat); 
@@ -1537,6 +1559,28 @@ const game = {
         if (isSuitEnemy) {
             const tie = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.5, 0.1), new THREE.MeshBasicMaterial({color: 0xaa0000}));
             tie.position.set(0, 2.8, 0.51); group.add(tie); partsToFlash.push(tie);
+        } else if (isJunkyardEnemy) {
+            const scrapMat = new THREE.MeshStandardMaterial({color: 0x7f8c8d, metalness: 0.8, roughness: 0.5});
+            const scrapHat = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.5, 0.5, 8), scrapMat);
+            scrapHat.position.set(0, 6.2, 0);
+            headGroup.add(scrapHat); partsToFlash.push(scrapHat);
+
+            const strap = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 1.0), new THREE.MeshStandardMaterial({color: 0x550000}));
+            strap.position.set(0, 2.8, 0.45);
+            strap.rotation.z = 0.5;
+            group.add(strap); partsToFlash.push(strap);
+        } else if (isStudioEnemy) {
+            const glassesMat = new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1});
+            const glasses = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.4, 0.2), glassesMat);
+            glasses.position.set(0, 5.2, 1.05);
+            headGroup.add(glasses); partsToFlash.push(glasses);
+        } else if (isServerEnemy) {
+            const cableMat = new THREE.MeshBasicMaterial({color: 0x00ff00});
+            const cable1 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.5), cableMat);
+            cable1.position.set(-0.4, 2.8, -0.6); cable1.rotation.x = 0.5;
+            const cable2 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.5), cableMat);
+            cable2.position.set(0.4, 2.8, -0.6); cable2.rotation.x = 0.5;
+            group.add(cable1, cable2); partsToFlash.push(cable1, cable2);
         }
         
         const armL = new THREE.Group(); armL.position.set(-1.3, 3.5, 0); 
@@ -1721,7 +1765,8 @@ const game = {
             if (theme.env === 'office') {
                 decoMat = new THREE.MeshBasicMaterial({color: Math.random() > 0.5 ? 0x3498db : 0x2ecc71});
             } else if (theme.env === 'junkyard') {
-                decoMat = new THREE.MeshStandardMaterial({color: 0xc0392b, metalness: 0.5});
+                decoMat = new THREE.MeshStandardMaterial({color: 0x8b4513, metalness: 0.3, roughness: 0.9});
+                decoGeo = new THREE.BoxGeometry(4, 4, 0.5);
             } else if (theme.env === 'studio') {
                 decoMat = new THREE.MeshStandardMaterial({color: 0x8e44ad, roughness: 1});
             } else if (theme.env === 'servers') {
@@ -1783,14 +1828,34 @@ const game = {
                 }
                 rX = 1.5; rZ = 1.5;
             } else if (rand < 0.7) { 
-                const carMat = new THREE.MeshStandardMaterial({ color: Math.random()>0.5?0xc0392b:0x2980b9, roughness: 0.8 });
-                const block = new THREE.Mesh(new THREE.BoxGeometry(4, 2, 4), carMat); block.position.y = 1; block.castShadow = true; 
-                group.add(block); rX = 2.5; rZ = 2.5;
+                const carColors = [0xc0392b, 0x2980b9, 0xf1c40f, 0x7f8c8d];
+                const cColor = carColors[Math.floor(Math.random() * carColors.length)];
+                const carMat = new THREE.MeshStandardMaterial({ color: cColor, metalness: 0.6, roughness: 0.8 });
+                const rustMat = new THREE.MeshStandardMaterial({ color: 0x8b4513, metalness: 0.2, roughness: 0.9 });
+                
+                const bottom = new THREE.Mesh(new THREE.BoxGeometry(4, 1.5, 2.5), carMat);
+                bottom.position.y = 0.75; bottom.castShadow = true;
+                
+                const top = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1, 2), rustMat);
+                top.position.set(0, 2, 0); top.castShadow = true;
+                top.rotation.z = 0.1; 
+                
+                group.add(bottom, top); rX = 2.5; rZ = 1.5;
             } else {
                 const barrelMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
-                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 2, 12), barrelMat); barrel.position.y = 1; barrel.castShadow = true;
-                const goo = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.1, 12), new THREE.MeshBasicMaterial({color: 0x2ecc71})); goo.position.y = 2.01;
-                group.add(barrel, goo); rX = 1.2; rZ = 1.2;
+                const barrel1 = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 1.8, 12), barrelMat); 
+                barrel1.position.set(-0.5, 0.9, 0); barrel1.castShadow = true;
+                
+                const barrel2 = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 1.8, 12), new THREE.MeshStandardMaterial({color: 0x8b0000})); 
+                barrel2.position.set(0.6, 0.9, 0.5); barrel2.castShadow = true;
+
+                const trashBag = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.9}));
+                trashBag.position.set(0, 0.5, -0.8);
+                
+                const goo = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), new THREE.MeshBasicMaterial({color: 0x2ecc71})); 
+                goo.rotation.x = -Math.PI/2; goo.position.y = 0.05;
+
+                group.add(barrel1, barrel2, trashBag, goo); rX = 1.5; rZ = 1.5;
             }
         } else if (envType === 'studio') {
             const blackMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
@@ -1831,7 +1896,7 @@ const game = {
     },
 
     spawnEnemy() {
-        const maxScreenEnemies = 10 + (this.stage * 2) + (this.wave * 2);
+        const maxScreenEnemies = 15 + (this.stage * 5) + (this.wave * 3);
         if(this.enemies.length >= maxScreenEnemies) return; 
 
         const theme = STAGE_THEMES[Math.min(this.stage - 1, 3)];
@@ -1841,17 +1906,23 @@ const game = {
         const angle = Math.random() * Math.PI * 2;
         enemy.position.set(Math.cos(angle)*40, 2, Math.sin(angle)*40);
         
-        const waveScale = 1 + (this.wave * 0.2);
-        let baseHp = 40 * this.stage;
+        const waveScale = 1 + (this.wave * 0.3) + (this.stage * 0.2);
+        let baseHp = 40 * Math.pow(1.3, this.stage);
         if (this.stage === 1) {
             baseHp = 20; 
             if (this.wave === 1) baseHp = 8; 
         }
         const finalHp = baseHp * waveScale;
         Object.assign(enemy.userData, { 
-            hp: finalHp, speed: 5 + this.wave, maxHp: finalHp, damage: 10 + (this.stage*5),
+            hp: finalHp, 
+            speed: Math.min(18, 4 + this.stage + (this.wave * 0.5) + (Math.random() * 2)), 
+            maxHp: finalHp, 
+            damage: 10 + (this.stage * 8) + (this.wave * 2),
             isRanged: eData.ranged || false,
-            rangedColor: eData.c
+            rangedColor: eData.c,
+            lungeCooldown: 0,
+            wobbleOffset: Math.random() * Math.PI * 2,
+            isLunging: 0
         });
         
         this.scene.add(enemy); this.enemies.push(enemy);
@@ -1865,7 +1936,7 @@ const game = {
         const bullet = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 1.2), new THREE.MeshBasicMaterial({ color: color }));
         bullet.position.copy(pos); bullet.position.y = 2;
         bullet.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir);
-        bullet.userData = { dir: dir, speed: 20, damage: 15 + (this.stage * 2), isPlayer: false, life: 0, rotSpeed: {x: 0.2, y: 0.5, z: 0} };
+        bullet.userData = { dir: dir, speed: 20 + (this.stage * 2), damage: 15 + (this.stage * 5), isPlayer: false, life: 0, rotSpeed: {x: 0.2, y: 0.5, z: 0} };
         this.scene.add(bullet); this.bullets.push(bullet);
     },
 
@@ -1878,11 +1949,14 @@ const game = {
         enemy.position.set(Math.cos(angle)*40, 3, Math.sin(angle)*40);
         enemy.scale.set(1.8, 1.8, 1.8);
         
-        const waveScale = 1 + (this.wave * 0.2);
-        const finalHp = 150 * this.stage * waveScale;
+        const waveScale = 1 + (this.wave * 0.3);
+        const finalHp = 150 * Math.pow(1.5, this.stage) * waveScale;
         Object.assign(enemy.userData, { 
-            hp: finalHp, speed: 4 + this.wave, maxHp: finalHp, damage: 20 + (this.stage*5),
-            isMiniBoss: true
+            hp: finalHp, speed: 4 + this.wave, maxHp: finalHp, damage: 30 + (this.stage*10),
+            isMiniBoss: true,
+            lungeCooldown: 0,
+            wobbleOffset: Math.random() * Math.PI * 2,
+            isLunging: 0
         });
         
         this.scene.add(enemy); this.enemies.push(enemy);
@@ -2150,7 +2224,7 @@ const game = {
             bullet.position.copy(pos); bullet.position.y = 2;
             const finalDir = dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0), (i/count)*Math.PI*2);
             bullet.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), finalDir);
-            bullet.userData = { dir: finalDir, speed: 15, damage: 20 + (this.stage * 5), isPlayer: false, life: 0 };
+            bullet.userData = { dir: finalDir, speed: 15 + (this.stage * 2), damage: 20 + (this.stage * 8), isPlayer: false, life: 0 };
             this.scene.add(bullet); this.bullets.push(bullet);
         }
     },
@@ -2158,7 +2232,6 @@ const game = {
     bossSummonMinions(pos) {
         if(this.phase === 'BOSS_DEATH' || !this.playerObj) return;
 
-        // PREVENÇÃO DE CRASH: Limite de minions no ecrã para o Boss não derreter o CPU!
         const maxMinions = this.isFinalBoss ? 20 : 10;
         const currentEnemies = this.enemies.length;
         if (currentEnemies >= maxMinions) return;
@@ -2180,12 +2253,15 @@ const game = {
             const waveScale = 1 + (this.wave * 0.2);
             let baseHp = 40 * this.stage;
             if (this.stage === 1) baseHp = 20; 
-            const finalHp = baseHp * waveScale * 0.7; // Lacaios invocados são ligeiramente mais fracos
+            const finalHp = baseHp * waveScale * 0.7; 
             
             Object.assign(enemy.userData, { 
                 hp: finalHp, speed: 5 + this.wave, maxHp: finalHp, damage: 10 + (this.stage*5),
                 isRanged: eData.ranged || false,
-                rangedColor: eData.c
+                rangedColor: eData.c,
+                lungeCooldown: 0,
+                wobbleOffset: Math.random() * Math.PI * 2,
+                isLunging: 0
             });
             
             this.createExplosion(enemy.position, 0x00ffcc, 8);
@@ -2271,21 +2347,16 @@ const game = {
         let lostSkillsMsg = "";
 
         if (upgradableSkills.length > 0) {
-            // Perde 1 ou 2 níveis de habilidades ao calhas!
             let numToLose = Math.min(upgradableSkills.length, Math.floor(Math.random() * 2) + 1); 
-
             for(let i=0; i<numToLose; i++) {
                 upgradableSkills = Object.keys(this.pStats.levels).filter(k => this.pStats.levels[k] > 0);
                 if(upgradableSkills.length === 0) break;
-
                 let randomSkill = upgradableSkills[Math.floor(Math.random() * upgradableSkills.length)];
                 this.pStats.levels[randomSkill]--;
                 lostSkillsMsg += `🔻 -1 Nível de ${UPGRADES_DEF[randomSkill].name}\n`;
             }
-
             this.recalculateStats();
         } else {
-            // Se não tiver habilidades, rouba-lhe o dinheiro (Lágrimas)
             if (this.lagrimas > 0) {
                 let lostTears = Math.min(this.lagrimas, 50);
                 this.lagrimas -= lostTears;
@@ -2298,10 +2369,8 @@ const game = {
     },
 
     recalculateStats() {
-        // Recalcula todos os atributos matematicamente para evitar bugs de vida infinita
         const char = this.selectedChar;
         const ability = char.abilities[this.selectedAbilityIdx];
-
         this.pStats.damage = char.stats.damage * ability.dmgMod;
         this.pStats.fireRate = char.stats.fireRate * ability.fireMod;
         this.pStats.speed = char.stats.speed;
@@ -2344,14 +2413,9 @@ const game = {
         this.pStats.hp -= amount; this.updateHUD(); this.flashCharacter(this.playerObj, 0xff0000);
         if(this.pStats.hp <= 0) {
             if(!this.isMobile && document.pointerLockElement) document.exitPointerLock();
-            
-            // PUNIÇÃO EXECUTADA COM SUCESSO E HUMILHAÇÃO VISUAL!
             const penaltyMsg = this.punishPlayer();
             document.getElementById('punishment-text').innerText = penaltyMsg;
-            
-            // O Capitão Fiasco esfrega a falha na cara dele
             this.showDialogue("Capitão Fiasco", "Inaceitável! O RH acaba de confiscar os teus bens. Lê o relatório da tua falha no ecrã!", 5000);
-
             this.state = 'GAMEOVER'; 
             this.switchScreen('screen-gameover');
             this.saveGame(); 
@@ -2376,14 +2440,20 @@ const game = {
         
         const bData = STAGE_THEMES[Math.min(this.stage - 1, 3)].boss;
         this.bossObj = this.createVoxelCharacter(bData.color, true, this.stage === 4 ? 2 : 1, 'boss'); 
-        this.bossObj.scale.set(3, 3, 3); this.bossObj.position.set(0, 30, -20);
+        this.bossObj.scale.set(3, 3, 3); 
+        this.bossObj.position.set(0, 30, -20);
+        this.bossObj.userData.hasLanded = false; // FLAG PARA QUEDA FLUIDA
         this.scene.add(this.bossObj);
         
-        this.bossMaxHp = bData.hp; this.bossHp = this.bossMaxHp;
+        const bossWaveScale = 1 + (this.wave * 0.2) + (this.stage * 0.5);
+        this.bossMaxHp = bData.hp * bossWaveScale;
+        this.bossHp = this.bossMaxHp;
+        
+        this.bossObj.userData.damage = 25 + (this.stage * 10);
         this.showDialogue("Capitão Fiasco", `CHEFE DETECTADO: ${bData.name.toUpperCase()}`, 4000);
 
         this.bossObj.userData.lastFire = 0;
-        this.bossObj.userData.lastSummon = Date.now() + 3000; // Tempo inicial para o primeiro summon
+        this.bossObj.userData.lastSummon = Date.now() + 3000; 
         if (!document.pointerLockElement) {
             this.safeRequestPointerLock();
         }
@@ -2517,9 +2587,10 @@ const game = {
                 this.spawnMiniBoss();
             }
 
-            const waveMultiplier = this.wave * 0.15; 
+            // TAXA DE SPAWN AUMENTADA!
+            const waveMultiplier = (this.wave * 0.25) + (this.stage * 0.3); 
             const timeIntensity = (60 - this.timerSeconds) / 60; 
-            const spawnChance = dt * (0.7 + waveMultiplier + (timeIntensity * 0.5));
+            const spawnChance = dt * (1.0 + waveMultiplier + (timeIntensity * 1.5));
             
             if(Math.random() < spawnChance) this.spawnEnemy();
 
@@ -2718,8 +2789,6 @@ const game = {
             this.renderer.render(this.scene, this.camera); return; 
         }
 
-        if (this.bossObj && this.bossObj.position && this.bossObj.position.y > 6) this.bossObj.position.y -= 25 * dt;
-
         for(let i = this.enemies.length - 1; i >= 0; i--) {
             const e = this.enemies[i];
             if(!e || !e.position) continue;
@@ -2731,8 +2800,28 @@ const game = {
             const stopDist = e.userData.isRanged ? 15.0 : 3.0;
 
             if(distToPlayer > stopDist) {
-                const moveX = dir.x * e.userData.speed * dt;
-                const moveZ = dir.z * e.userData.speed * dt;
+                // IA AVANÇADA: Movimento Ziguezague
+                const perpX = -dir.z;
+                const perpZ = dir.x;
+                const wobble = Math.sin(Date.now() * 0.002 + e.userData.wobbleOffset) * 0.5;
+                
+                let currentEnemySpeed = e.userData.speed;
+                
+                // IA AVANÇADA: Investida (Lunge) para Inimigos Melee
+                if (!e.userData.isRanged && distToPlayer < 10 && e.userData.lungeCooldown <= 0) {
+                    e.userData.lungeCooldown = 3; 
+                    e.userData.isLunging = 0.5; 
+                }
+                
+                if (e.userData.lungeCooldown > 0) e.userData.lungeCooldown -= dt;
+                if (e.userData.isLunging > 0) {
+                    e.userData.isLunging -= dt;
+                    currentEnemySpeed *= 2.5; 
+                }
+
+                const moveX = (dir.x + perpX * wobble) * currentEnemySpeed * dt;
+                const moveZ = (dir.z + perpZ * wobble) * currentEnemySpeed * dt;
+                
                 if(!this.checkCollision(e.position.x + moveX, e.position.z)) e.position.x += moveX;
                 if(!this.checkCollision(e.position.x, e.position.z + moveZ)) e.position.z += moveZ;
             } else {
@@ -2761,9 +2850,24 @@ const game = {
             this.applyWalkingAnim(e, 1, isEnemyWalking, dt);
         }
 
-        if(this.bossActive && this.bossObj && this.bossObj.position && this.bossObj.position.y <= 6) {
+        if (this.bossActive && this.bossObj && !this.bossObj.userData.hasLanded) {
+            if (this.bossObj.position.y > 6) {
+                this.bossObj.position.y -= 25 * dt;
+            } else {
+                this.bossObj.position.y = 6;
+                this.bossObj.userData.hasLanded = true;
+                sfx.play('explosion');
+                this.cameraShake = 1.0;
+            }
+            this.applyWalkingAnim(this.bossObj, 0, false, dt); 
+        }
+
+        if(this.bossActive && this.bossObj && this.bossObj.userData.hasLanded) {
             const dir = new THREE.Vector3().subVectors(this.playerObj.position, this.bossObj.position).normalize(); dir.y = 0;
-            this.bossObj.position.addScaledVector(dir, 5 * dt);
+            
+            // BOSS FICA MAIS RÁPIDO COM O TEMPO
+            const bossSpeed = (5 + this.stage * 1.5);
+            this.bossObj.position.addScaledVector(dir, bossSpeed * dt);
             this.bossObj.rotation.y = Math.atan2(dir.x, dir.z);
             this.bossObj.position.y = 6 + Math.abs(Math.sin(Date.now()*0.01)) * 0.5;
 
@@ -2772,7 +2876,7 @@ const game = {
             this.applyWalkingAnim(this.bossObj, 0.5, true, dt);
 
             // Boss dispara balas
-            let fireDelay = this.isFinalBoss ? 1000 : 1500;
+            let fireDelay = this.isFinalBoss ? 800 : 1500;
             if(Date.now() - this.bossObj.userData.lastFire > fireDelay) {
                 this.bossShoot(this.bossObj.position, this.isFinalBoss ? 0xff00ff : 0xffaa00, this.isFinalBoss ? 12 : 8);
                 this.bossObj.userData.lastFire = Date.now();
@@ -2780,7 +2884,7 @@ const game = {
 
             // LÓGICA DE INVOCAÇÃO (SUMMON) DE MINIONS
             let summonDelay = this.isFinalBoss ? 6000 : 10000;
-            if(!this.bossObj.userData.lastSummon) this.bossObj.userData.lastSummon = Date.now() + 3000; // Começa a invocar após 3s
+            if(!this.bossObj.userData.lastSummon) this.bossObj.userData.lastSummon = Date.now() + 3000;
             if(Date.now() - this.bossObj.userData.lastSummon > summonDelay) {
                 this.bossSummonMinions(this.bossObj.position);
                 this.bossObj.userData.lastSummon = Date.now();
@@ -2788,7 +2892,7 @@ const game = {
 
             if(this.bossObj.position.distanceTo(this.playerObj.position) < 6) {
                 if(!this.bossObj.userData.lastTouchAttack || Date.now() - this.bossObj.userData.lastTouchAttack > 500) {
-                    this.takeDamage(15); 
+                    this.takeDamage(this.bossObj.userData.damage); 
                     this.bossObj.userData.lastTouchAttack = Date.now();
                 }
             } 
